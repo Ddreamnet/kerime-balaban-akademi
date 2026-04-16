@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Capacitor safe area variables */
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-body text-on-surface bg-surface antialiased;
+    /* Prevent horizontal scroll */
+    overflow-x: hidden;
+  }
+
+  /* Design system: no pure black text */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-on-surface;
+  }
+
+  /* Ensure minimum touch targets */
+  a, button {
+    @apply min-h-touch;
+  }
+
+  /* Remove default list styles */
+  ul, ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Focus ring — accessible and clean */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary rounded-md;
+  }
+}
+
+@layer utilities {
+  /* Safe area padding utilities for Capacitor */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Glassmorphism utility */
+  .glass {
+    background: rgba(249, 249, 249, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .glass-dark {
+    background: rgba(26, 28, 28, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* Primary gradient text */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #b7131a 0%, #db322f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Kinetic button scale */
+  .btn-kinetic {
+    @apply transition-all duration-200;
+  }
+  .btn-kinetic:hover {
+    transform: scale(1.02);
+  }
+  .btn-kinetic:active {
+    transform: scale(0.98);
+  }
+
+  /* Scrollbar hide utility (for horizontal scroll sections) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
