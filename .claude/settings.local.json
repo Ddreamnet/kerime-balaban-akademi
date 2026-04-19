@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__get_project_url",
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__generate_typescript_types",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(pkill -f \"vite\")",
+      "mcp__claude_ai_Supabase__get_logs",
+      "Bash(npx tsc *)",
+      "Bash(npx vite *)",
+      "Bash(npx cap *)",
+      "Bash(gh auth *)",
+      "Bash(git config *)",
+      "Bash(git --version)",
+      "mcp__claude_ai_Supabase__search_docs",
+      "Bash(lsof -ti:5173,5174,5175)",
+      "Bash(xargs kill *)",
+      "Bash(kill 1318 1329 1330)",
+      "Bash(kill %1)",
+      "mcp__claude_ai_Supabase__list_tables"
+    ]
+  }
+}

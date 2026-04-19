@@ -26,7 +26,7 @@ export function PageHero({
     <div
       className={cn(
         'relative bg-on-surface overflow-hidden',
-        'py-16 md:py-20',
+        'pt-6 md:pt-10 pb-16 md:pb-20',
         className
       )}
     >

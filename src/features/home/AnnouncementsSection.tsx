@@ -8,9 +8,11 @@ import { AnnouncementCard } from '@/features/announcements/AnnouncementCard'
 import { announcements as staticAnnouncements } from '@/data/announcements'
 import { listPublishedAnnouncements } from '@/lib/announcements'
 import type { Announcement } from '@/types/content.types'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 export function AnnouncementsSection() {
   const [items, setItems] = useState<Announcement[]>([])
+  const settings = useSiteSettings()
 
   useEffect(() => {
     const load = async () => {
@@ -39,10 +41,10 @@ export function AnnouncementsSection() {
       <Container>
         <div className="flex flex-col gap-10">
           <SectionHeader
-            label="Son Duyurular"
-            headline="Akademiden"
-            highlight="haberler."
-            body="Kuşak sınavları, etkinlikler ve duyurular için burayı takip edin."
+            label={settings.home_announcements_label}
+            headline={settings.home_announcements_headline}
+            highlight={settings.home_announcements_highlight}
+            body={settings.home_announcements_body}
             action={
               <Link
                 to="/duyurular"

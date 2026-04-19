@@ -5,6 +5,12 @@
 
 import { supabase } from './supabase'
 import type { UserRole } from '@/types/auth.types'
+import {
+  PushNotifications as CapPushBridge,
+  LocalNotifications as CapLocalBridge,
+  getPlatform,
+  isNativePlatform,
+} from './capacitor'
 
 export type NotificationType = 'general' | 'birthday' | 'payment' | 'exam' | 'attendance'
 export type NotificationTarget = 'all' | UserRole
@@ -170,4 +176,63 @@ export const TARGET_LABELS: Record<NotificationTarget, string> = {
   admin: 'Yöneticiler',
   coach: 'Antrenörler',
   parent: 'Veliler',
+}
+
+// ─── Push / device registration ─────────────────────────────────────────────
+
+/**
+ * Called once per authenticated native session:
+ *   1. Ask the OS for push permission.
+ *   2. Register with FCM/APNs and obtain a device token.
+ *   3. Upsert the token into `device_tokens` so the backend can target it.
+ *
+ * No-op on web.
+ */
+export async function registerPushForUser(userId: string): Promise<void> {
+  if (!isNativePlatform()) return
+
+  const granted = await CapPushBridge.requestPermission()
+  if (!granted) return
+
+  // Also ensure local-notification permission (birthday reminders, etc.).
+  await CapLocalBridge.requestPermission()
+
+  const token = await CapPushBridge.getToken()
+  if (!token) return
+
+  const platform = getPlatform()
+
+  // Look up existing row for this exact (user, token) — avoid relying on a
+  // specific unique constraint being present in the DB.
+  const { data: existing } = await supabase
+    .from('device_tokens')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('token', token)
+    .maybeSingle()
+
+  if (existing) return
+
+  await supabase.from('device_tokens').insert({
+    user_id: userId,
+    token,
+    platform,
+  })
+}
+
+/**
+ * Remove the current device's token on sign-out so the backend stops
+ * targeting this device. Safe to call from any platform.
+ */
+export async function unregisterPushForUser(userId: string): Promise<void> {
+  if (!isNativePlatform()) return
+
+  const token = await CapPushBridge.getToken()
+  if (!token) return
+
+  await supabase
+    .from('device_tokens')
+    .delete()
+    .eq('user_id', userId)
+    .eq('token', token)
 }

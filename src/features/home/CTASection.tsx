@@ -3,21 +3,15 @@ import { Phone, MessageCircle, MapPin, CheckCircle2 } from 'lucide-react'
 import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { Button } from '@/components/ui/Button'
-import { academyInfo, contactLinks } from '@/data/academyInfo'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 interface LeadFormValues {
   name: string
   phone: string
 }
 
-const benefits = [
-  'İlk ders tamamen ücretsiz',
-  'Kayıt için taahhüt gerekmez',
-  'Ekipman zorunluluğu yok',
-  'Yaş ve seviyeye uygun grup',
-]
-
 export function CTASection() {
+  const settings = useSiteSettings()
   const {
     register,
     handleSubmit,
@@ -31,7 +25,7 @@ export function CTASection() {
       `Ad Soyad: ${data.name}\n` +
       `Telefon: ${data.phone}`
 
-    const whatsappHref = `https://wa.me/${academyInfo.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
+    const whatsappHref = `https://wa.me/${settings.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
     window.open(whatsappHref, '_blank', 'noopener,noreferrer')
     reset()
   }
@@ -48,24 +42,29 @@ export function CTASection() {
           <div className="flex flex-col gap-7">
             <div>
               <p className="text-label-md text-primary uppercase tracking-widest mb-3">
-                Ücretsiz Deneme
+                {settings.home_cta_label}
               </p>
               <h2 className="font-display font-black text-white text-display-sm md:text-display-md leading-tight">
-                İlk dersinizi{' '}
-                <span className="text-gradient-primary italic">ücretsiz</span>{' '}
-                deneyin.
+                {settings.home_cta_headline}
+                {settings.home_cta_headline_highlight && (
+                  <>
+                    {' '}
+                    <span className="text-gradient-primary italic">
+                      {settings.home_cta_headline_highlight}
+                    </span>
+                  </>
+                )}
+                {settings.home_cta_headline_suffix && <> {settings.home_cta_headline_suffix}</>}
               </h2>
             </div>
 
             <p className="text-body-lg text-white/65 leading-relaxed">
-              Çocuğunuzu ya da kendinizi tanıştırmak için herhangi bir Pazartesi,
-              Çarşamba veya Cuma sabahı ücretsiz deneme dersine bekliyoruz.
-              Taahhüt yok, ekipman şartı yok.
+              {settings.home_cta_body}
             </p>
 
             {/* Benefits */}
             <ul className="flex flex-col gap-3">
-              {benefits.map((b) => (
+              {settings.home_cta_benefits.map((b) => (
                 <li key={b} className="flex items-center gap-3 text-body-md text-white/70">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                   {b}
@@ -76,14 +75,14 @@ export function CTASection() {
             {/* Direct contact */}
             <div className="flex flex-wrap gap-3 pt-2">
               <a
-                href={contactLinks.phone}
+                href={settings.phoneLink}
                 className="flex items-center gap-2 px-4 py-3 rounded-lg bg-white/10 hover:bg-white/15 text-white text-body-sm font-semibold transition-colors"
               >
                 <Phone className="w-4 h-4" />
-                {academyInfo.phone}
+                {settings.phone}
               </a>
               <a
-                href={contactLinks.whatsapp}
+                href={settings.whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-3 rounded-lg bg-green-600/20 hover:bg-green-600/30 text-green-400 text-body-sm font-semibold transition-colors"
@@ -95,7 +94,7 @@ export function CTASection() {
 
             <div className="flex items-center gap-2 text-body-sm text-white/30">
               <MapPin className="w-3.5 h-3.5 text-primary" />
-              {academyInfo.address}
+              {settings.address}
             </div>
           </div>
 
@@ -104,10 +103,10 @@ export function CTASection() {
             <div className="flex flex-col gap-5">
               <div>
                 <h3 className="font-display font-bold text-white text-headline-sm">
-                  Yer Ayırtın
+                  {settings.home_cta_form_title}
                 </h3>
                 <p className="text-body-sm text-white/50 mt-1">
-                  Bilgilerinizi bırakın, sizi WhatsApp'tan arayalım.
+                  {settings.home_cta_form_subtitle}
                 </p>
               </div>
 

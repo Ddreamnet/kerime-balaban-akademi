@@ -6,6 +6,7 @@ import { fetchProfile } from '@/lib/auth'
 import { useAuthStore } from '@/store/authStore'
 import { isFullyActive } from '@/types/auth.types'
 import { SiteSettingsProvider } from '@/hooks/useSiteSettings'
+import { registerPushForUser } from '@/lib/notifications'
 
 /**
  * Bootstraps the Supabase auth listener before rendering routes.
@@ -23,8 +24,12 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
 
     const resolveSession = async (userId: string) => {
       const profile = await fetchProfile(userId)
-      if (isFullyActive(profile)) {
+      if (profile && isFullyActive(profile)) {
         setUser(profile)
+        // Register this device's push token in the background.
+        void registerPushForUser(profile.id).catch(() => {
+          // Silent — push is optional; never block login on it.
+        })
       } else {
         // Stale or never-approved session — kill it.
         await supabase.auth.signOut()

@@ -3,6 +3,7 @@ import { Lock, Check, User, Phone, Mail } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { useAuth } from '@/hooks/useAuth'
 import { updateOwnProfile } from '@/lib/auth'
 
@@ -24,6 +25,8 @@ export function ParentProfilePage() {
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<FormValues>({
     defaultValues: {
@@ -39,6 +42,8 @@ export function ParentProfilePage() {
         }
       : undefined,
   })
+
+  const currentAvatar = watch('avatar_url')
 
   if (!user) return null
 
@@ -69,21 +74,14 @@ export function ParentProfilePage() {
 
       <Card>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
-          {/* Header with avatar */}
+          {/* Header with avatar uploader */}
           <div className="flex items-center gap-4 pb-4 border-b border-surface-low">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-primary flex items-center justify-center shrink-0">
-              {user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.full_name}
-                  className="w-full h-full rounded-2xl object-cover"
-                />
-              ) : (
-                <span className="font-display font-black text-white text-xl">
-                  {user.full_name[0]?.toUpperCase() ?? '?'}
-                </span>
-              )}
-            </div>
+            <AvatarUpload
+              value={currentAvatar || null}
+              ownerId={user.id}
+              fallbackLabel={user.full_name || user.email}
+              onChange={(url) => setValue('avatar_url', url ?? '', { shouldDirty: true })}
+            />
             <div>
               <p className="font-display font-bold text-title-lg text-on-surface">
                 {user.full_name || 'İsimsiz'}
@@ -124,14 +122,8 @@ export function ParentProfilePage() {
             {...register('phone')}
           />
 
-          <Input
-            label="Profil Fotoğrafı (URL)"
-            type="url"
-            placeholder="https://..."
-            hint="Profil fotoğrafınızın tam URL'si (opsiyonel)"
-            error={errors.avatar_url?.message}
-            {...register('avatar_url')}
-          />
+          {/* avatar_url is managed by the AvatarUpload above */}
+          <input type="hidden" {...register('avatar_url')} />
 
           {/* Security notice */}
           <div className="flex items-start gap-2.5 bg-surface-low rounded-md px-3 py-2.5">

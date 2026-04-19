@@ -47,5 +47,19 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Profil fotoğrafı çekmek için kameraya erişim izni istiyoruz.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Profil fotoğrafınızı ve sporcu belgelerinizi yüklemek için galerinize erişmek istiyoruz.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Çektiğiniz fotoğrafları galeriye kaydetmek için izin istiyoruz.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Video çekerken ses kaydı için mikrofona erişmek istiyoruz.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Sporcu belgelerinizi yüklemek için dosyalarınıza erişmek istiyoruz.</string>
 </dict>
 </plist>

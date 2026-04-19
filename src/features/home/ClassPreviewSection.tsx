@@ -5,8 +5,10 @@ import { Container } from '@/components/layout/Container'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { ClassGroupCard } from '@/features/classes/ClassGroupCard'
 import { classGroups } from '@/data/classes'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 export function ClassPreviewSection() {
+  const settings = useSiteSettings()
   return (
     <Section bg="default">
       <Container>
@@ -14,16 +16,16 @@ export function ClassPreviewSection() {
 
           {/* Header row */}
           <SectionHeader
-            label="Ders Programı"
-            headline="Haftada 3 gün,"
-            highlight="4 farklı grup."
-            body="Yaş ve seviyeye göre ayrılmış gruplarla her öğrenci kendi temposunda gelişir. Pazartesi, Çarşamba ve Cuma antrenmanlar devam eder."
+            label={settings.home_classes_label}
+            headline={settings.home_classes_headline}
+            highlight={settings.home_classes_highlight}
+            body={settings.home_classes_body}
             action={
               <Link
                 to="/dersler"
                 className="hidden md:flex items-center gap-1 text-body-sm font-semibold text-primary hover:text-primary-dark transition-colors"
               >
-                Tüm programı gör
+                {settings.home_classes_link_label}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             }
@@ -65,7 +67,7 @@ export function ClassPreviewSection() {
               to="/dersler"
               className="flex items-center gap-2 text-body-md font-semibold text-primary hover:text-primary-dark transition-colors"
             >
-              Tüm ders programını gör
+              {settings.home_classes_link_label}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

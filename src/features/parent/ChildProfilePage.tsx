@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Badge } from '@/components/ui/Badge'
+import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getMyChild,
@@ -24,6 +25,7 @@ interface ChildFormValues {
   birthday: string
   class_group_id: string
   belt_level: BeltLevel | ''
+  avatar_url: string
 }
 
 /**
@@ -223,11 +225,13 @@ function ChildForm({ existing, classes, parentId, onSaved, onCancel }: ChildForm
       birthday: existing?.birthday ?? '',
       class_group_id: existing?.class_group_id ?? '',
       belt_level: existing?.belt_level ?? '',
+      avatar_url: existing?.avatar_url ?? '',
     },
   })
 
   const selectedClassId = watch('class_group_id')
   const selectedBelt = watch('belt_level')
+  const currentAvatar = watch('avatar_url')
 
   const onSubmit = async (data: ChildFormValues) => {
     const payload = {
@@ -235,6 +239,7 @@ function ChildForm({ existing, classes, parentId, onSaved, onCancel }: ChildForm
       birthday: data.birthday || null,
       class_group_id: data.class_group_id || null,
       belt_level: (data.belt_level || null) as BeltLevel | null,
+      avatar_url: data.avatar_url || null,
     }
 
     const { child, error } = existing
@@ -253,9 +258,18 @@ function ChildForm({ existing, classes, parentId, onSaved, onCancel }: ChildForm
     <Card>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
-            <Baby className="w-5 h-5 text-primary" />
-          </div>
+          {existing ? (
+            <AvatarUpload
+              value={currentAvatar || null}
+              ownerId={existing.id}
+              fallbackLabel={existing.full_name}
+              onChange={(url) => setValue('avatar_url', url ?? '', { shouldDirty: true })}
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+              <Baby className="w-5 h-5 text-primary" />
+            </div>
+          )}
           <div>
             <h2 className="font-display font-bold text-title-lg text-on-surface">
               {existing ? 'Bilgileri Düzenle' : 'Çocuğumu Kaydet'}
@@ -267,6 +281,7 @@ function ChildForm({ existing, classes, parentId, onSaved, onCancel }: ChildForm
             </p>
           </div>
         </div>
+        <input type="hidden" {...register('avatar_url')} />
 
         <Input
           label="Ad Soyad"

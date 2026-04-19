@@ -1,46 +1,27 @@
 import { useNavigate } from 'react-router-dom'
-import { Award, Heart, Target, Flame, ChevronRight } from 'lucide-react'
+import { Award, Heart, Target, Flame, ChevronRight, type LucideIcon } from 'lucide-react'
 import { PageHero } from '@/components/layout/PageHero'
 import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { academyInfo, academyStats } from '@/data/academyInfo'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 
-const values = [
-  {
-    icon: Award,
-    title: 'Disiplin',
-    body: 'Her antrenman, hayatın her alanında işe yarayacak öz disiplin becerisi kazandırır.',
-  },
-  {
-    icon: Heart,
-    title: 'Saygı',
-    body: 'Antrenör, öğrenci ve ebeveyn ilişkisi daima saygı temelli kurulur.',
-  },
-  {
-    icon: Target,
-    title: 'Kararlılık',
-    body: 'Her öğrencinin hedefi ayrıdır; hedefe ulaşma yolunda kararlı bir yol çizilir.',
-  },
-  {
-    icon: Flame,
-    title: 'Tutku',
-    body: "Taekwondo'ya duyduğumuz tutku, antrenmanlarımızdaki enerjiye yansır.",
-  },
-]
+// Icons assigned by position. If admin adds more than 4, extras cycle through the same set.
+const VALUE_ICONS: LucideIcon[] = [Award, Heart, Target, Flame]
 
 export function AboutPage() {
   const navigate = useNavigate()
+  const settings = useSiteSettings()
 
   return (
     <>
       <PageHero
         label="Hakkımızda"
-        headline="Kim olduğumuzu"
-        highlight="tanıyın."
-        body="Kerime Balaban Akademi, Bartın'ın kalbi Merkez ilçesinde çocuklar ve gençler için açılan profesyonel bir taekwondo akademisidir."
+        headline={settings.about_hero_headline}
+        highlight={settings.about_hero_highlight}
+        body={settings.about_hero_body}
       />
 
       {/* Academy story */}
@@ -51,26 +32,20 @@ export function AboutPage() {
             {/* Text */}
             <div className="flex flex-col gap-6">
               <SectionHeader
-                label="Hikayemiz"
-                headline="Bartın'ın ilk"
-                highlight="taekwondo akademisi."
+                label={settings.about_story_label}
+                headline={settings.about_story_headline}
+                highlight={settings.about_story_highlight}
               />
               <div className="flex flex-col gap-4 text-body-lg text-on-surface/65 leading-relaxed">
-                <p>
-                  Kerime Balaban Akademi, {academyInfo.founded_year ?? 2018} yılında Bartın Merkez'de kapılarını açtı. Kuruluşumuzdan bu yana yüzlerce çocuğa taekwondo disiplinini sevdirdik, onları güvenli ve destekleyici bir ortamda geliştirdik.
-                </p>
-                <p>
-                  Akademimiz; sadece teknik öğreten bir spor okulu değil, karakter inşa eden bir topluluktur. Öğrencilerimizi sporcu kimliğinin ötesinde, saygılı, kararlı ve özgüvenli bireyler olarak yetiştirmeyi amaçlıyoruz.
-                </p>
-                <p>
-                  Haftada 3 gün, 4 farklı grup düzeyiyle 5 yaşından itibaren her yaştan sporcu akademimizde yer bulabilir.
-                </p>
+                {settings.about_story_paragraphs.map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
               </div>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4">
-              {academyStats.map((stat, i) => (
+              {settings.academy_stats.map((stat, i) => (
                 <Card key={i} className="flex flex-col gap-1 text-center py-6">
                   <span className="font-display font-black text-primary text-4xl leading-none">
                     {stat.value}
@@ -100,10 +75,10 @@ export function AboutPage() {
               </div>
               <div className="text-center">
                 <p className="font-display font-bold text-on-surface text-title-lg">
-                  {academyInfo.coach_name}
+                  {settings.coach_name}
                 </p>
                 <p className="text-body-sm text-primary font-semibold mt-0.5">
-                  {academyInfo.coach_title}
+                  {settings.coach_title}
                 </p>
               </div>
             </div>
@@ -111,21 +86,16 @@ export function AboutPage() {
             {/* Bio */}
             <div className="flex flex-col gap-6 order-1 lg:order-2">
               <SectionHeader
-                label="Antrenörümüz"
-                headline={academyInfo.coach_name}
+                label={settings.about_coach_label}
+                headline={settings.coach_name}
               />
 
               <p className="text-body-lg text-on-surface/65 leading-relaxed">
-                {academyInfo.coach_bio}
+                {settings.coach_bio}
               </p>
 
               <div className="flex flex-col gap-3">
-                {[
-                  '3. Dan Siyah Kuşak',
-                  'Ulusal Taekwondo Şampiyonu',
-                  '10+ Yıl Öğretim Deneyimi',
-                  'Milli Takım Antrenörü Sertifikası',
-                ].map((credential) => (
+                {settings.coach_credentials.map((credential) => (
                   <div key={credential} className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                     <span className="text-body-md text-on-surface/70">{credential}</span>
@@ -143,26 +113,29 @@ export function AboutPage() {
         <Container>
           <div className="flex flex-col gap-10">
             <SectionHeader
-              label="Değerlerimiz"
-              headline="Temeller"
-              highlight="sağlam."
+              label={settings.about_values_label}
+              headline={settings.about_values_headline}
+              highlight={settings.about_values_highlight}
               align="center"
-              body="Her antrenmanın arkasında dört temel değer yatar."
+              body={settings.about_values_body}
             />
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {values.map((v) => (
-                <Card key={v.title} className="flex flex-col gap-4 text-center items-center">
-                  <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center">
-                    <v.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-display font-bold text-title-md text-on-surface">
-                      {v.title}
-                    </h3>
-                    <p className="text-body-sm text-on-surface/60 leading-relaxed">{v.body}</p>
-                  </div>
-                </Card>
-              ))}
+              {settings.about_values.map((v, i) => {
+                const Icon = VALUE_ICONS[i % VALUE_ICONS.length]
+                return (
+                  <Card key={`${v.title}-${i}`} className="flex flex-col gap-4 text-center items-center">
+                    <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center">
+                      <Icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-display font-bold text-title-md text-on-surface">
+                        {v.title}
+                      </h3>
+                      <p className="text-body-sm text-on-surface/60 leading-relaxed">{v.body}</p>
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
           </div>
         </Container>
@@ -174,10 +147,10 @@ export function AboutPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
             <div>
               <h2 className="font-display font-bold text-headline-lg text-white">
-                Ailemize katılmaya hazır mısınız?
+                {settings.about_cta_headline}
               </h2>
               <p className="text-body-lg text-white/70 mt-1">
-                İlk ücretsiz ders için bugün iletişime geçin.
+                {settings.about_cta_body}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 justify-center">
@@ -187,7 +160,7 @@ export function AboutPage() {
                 onClick={() => navigate('/iletisim')}
                 className="border-white/40 text-white hover:bg-white/10 shrink-0"
               >
-                Bize Ulaşın
+                {settings.about_cta_primary_label}
                 <ChevronRight className="w-4 h-4" />
               </Button>
               <Button
@@ -196,7 +169,7 @@ export function AboutPage() {
                 onClick={() => navigate('/dersler')}
                 className="text-white/70 hover:text-white hover:bg-white/10 shrink-0"
               >
-                Dersleri İncele
+                {settings.about_cta_secondary_label}
               </Button>
             </div>
           </div>

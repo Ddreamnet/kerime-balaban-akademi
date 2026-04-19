@@ -5,9 +5,11 @@ import { Container } from '@/components/layout/Container'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { ProductCard } from '@/features/products/ProductCard'
 import { products } from '@/data/products'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 export function ProductsPreviewSection() {
   const featured = products.filter((p) => p.is_featured && p.is_available).slice(0, 3)
+  const settings = useSiteSettings()
 
   return (
     <Section bg="card">
@@ -15,10 +17,10 @@ export function ProductsPreviewSection() {
         <div className="flex flex-col gap-10">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
             <SectionHeader
-              label="Ekipmanlar"
-              headline="İhtiyacınız olan"
-              highlight="her şey."
-              body="Akademimizden temin edebileceğiniz taekwondo ekipmanları. Detaylar için WhatsApp üzerinden iletişime geçin."
+              label={settings.home_products_label}
+              headline={settings.home_products_headline}
+              highlight={settings.home_products_highlight}
+              body={settings.home_products_body}
             />
             <Link
               to="/urunler"

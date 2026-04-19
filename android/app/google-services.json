@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "924230299845",
+    "project_id": "kerime-balaban-akademi",
+    "storage_bucket": "kerime-balaban-akademi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:924230299845:android:30e1c842dda573218e00ac",
+        "android_client_info": {
+          "package_name": "com.kerimebalabanakademi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZ7aODiFwauQmjrqtqF3T_SHM07e-s_C4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

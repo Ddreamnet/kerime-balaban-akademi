@@ -5,7 +5,7 @@ import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { ProductCard } from './ProductCard'
 import { products, productCategoryLabels } from '@/data/products'
-import { contactLinks } from '@/data/academyInfo'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { cn } from '@/utils/cn'
 import type { ProductCategory } from '@/types/content.types'
 
@@ -20,6 +20,7 @@ const filters: { key: FilterKey; label: string }[] = [
 
 export function ProductsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all')
+  const settings = useSiteSettings()
 
   const visible = products.filter(
     (p) => p.is_available && (activeFilter === 'all' || p.category === activeFilter)
@@ -28,10 +29,10 @@ export function ProductsPage() {
   return (
     <>
       <PageHero
-        label="Ekipmanlarımız"
-        headline="Doğru ekipman,"
-        highlight="doğru başlangıç."
-        body="Taekwondo için ihtiyaç duyduğunuz tüm ekipmanları akademimizden temin edebilirsiniz. Sorularınız için bize WhatsApp üzerinden ulaşın."
+        label={settings.products_hero_label}
+        headline={settings.products_hero_headline}
+        highlight={settings.products_hero_highlight}
+        body={settings.products_hero_body}
       />
 
       <Section bg="default">
@@ -86,20 +87,20 @@ export function ProductsPage() {
           <div className="bg-on-surface rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h2 className="font-display font-bold text-headline-sm text-white">
-                Hangi ekipmanı seçmeli?
+                {settings.products_cta_headline}
               </h2>
               <p className="text-body-md text-white/60 mt-1">
-                Deneyim seviyenize ve grubunuza göre tavsiye için WhatsApp'tan yazın.
+                {settings.products_cta_body}
               </p>
             </div>
             <a
-              href={contactLinks.whatsapp}
+              href={settings.whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-6 py-3.5 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold transition-colors shrink-0"
             >
               <MessageCircle className="w-5 h-5" />
-              WhatsApp'tan Sor
+              {settings.products_cta_button_label}
             </a>
           </div>
         </Container>

@@ -134,9 +134,9 @@ export function MobileDrawer({ isOpen, onClose, navItems }: MobileDrawerProps) {
             variant="primary"
             size="lg"
             fullWidth
-            onClick={() => { onClose(); navigate('/iletisim') }}
+            onClick={() => { onClose(); navigate('/kayit') }}
           >
-            Ücretsiz Deneme Dersi Al
+            Kayıt Ol
           </Button>
 
           <div className="flex gap-2">

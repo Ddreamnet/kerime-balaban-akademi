@@ -3,6 +3,7 @@ import { Lock } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { adminUpdateProfile } from '@/lib/auth'
 import type { UserProfile } from '@/types/auth.types'
 import { ROLE_LABELS } from '@/types/auth.types'
@@ -38,6 +39,8 @@ export function EditProfileModal({
     handleSubmit,
     reset,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
@@ -81,6 +84,16 @@ export function EditProfileModal({
       size="md"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+        <div className="flex justify-center pt-1">
+          <AvatarUpload
+            value={watch('avatar_url') || null}
+            ownerId={profile.id}
+            fallbackLabel={profile.full_name || profile.email}
+            onChange={(url) => setValue('avatar_url', url ?? '', { shouldDirty: true })}
+          />
+        </div>
+        <input type="hidden" {...register('avatar_url')} />
+
         {/* Read-only: email */}
         <ReadOnlyField label="E-posta" value={profile.email} />
 
@@ -101,15 +114,6 @@ export function EditProfileModal({
           placeholder="+90 5XX XXX XX XX"
           error={errors.phone?.message}
           {...register('phone')}
-        />
-
-        <Input
-          label="Profil Fotoğrafı (URL)"
-          type="url"
-          placeholder="https://..."
-          hint="Profil fotoğrafının tam URL'si"
-          error={errors.avatar_url?.message}
-          {...register('avatar_url')}
         />
 
         {/* Password note */}

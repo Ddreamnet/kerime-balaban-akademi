@@ -94,6 +94,10 @@ const config: Config = {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(100%)' },
         },
+        'slide-in-left': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(0)' },
+        },
         'fade-in': {
           from: { opacity: '0' },
           to: { opacity: '1' },
@@ -106,13 +110,78 @@ const config: Config = {
           from: { opacity: '0', transform: 'scale(0.95)' },
           to: { opacity: '1', transform: 'scale(1)' },
         },
+        // Hero: text lines slide in from right as if "kicked"
+        'hero-push-1': {
+          '0%': { opacity: '0', transform: 'translateX(120px) skewX(-8deg)' },
+          '60%': { opacity: '1', transform: 'translateX(-12px) skewX(2deg)' },
+          '80%': { transform: 'translateX(4px) skewX(-0.5deg)' },
+          '100%': { opacity: '1', transform: 'translateX(0) skewX(0)' },
+        },
+        'hero-push-2': {
+          '0%': { opacity: '0', transform: 'translateX(160px) skewX(-10deg)' },
+          '60%': { opacity: '1', transform: 'translateX(-16px) skewX(3deg)' },
+          '80%': { transform: 'translateX(6px) skewX(-1deg)' },
+          '100%': { opacity: '1', transform: 'translateX(0) skewX(0)' },
+        },
+        'hero-push-3': {
+          '0%': { opacity: '0', transform: 'translateX(200px) skewX(-12deg)' },
+          '60%': { opacity: '1', transform: 'translateX(-20px) skewX(4deg)' },
+          '80%': { transform: 'translateX(8px) skewX(-1.5deg)' },
+          '100%': { opacity: '1', transform: 'translateX(0) skewX(0)' },
+        },
+        // Hero: kick image enters from right
+        'kick-enter': {
+          '0%': { opacity: '0', transform: 'translateX(80px) scale(0.9)' },
+          '50%': { opacity: '1', transform: 'translateX(-8px) scale(1.02)' },
+          '100%': { opacity: '1', transform: 'translateX(0) scale(1)' },
+        },
+        // Impact shockwaves expanding outward from kick
+        'shockwave-1': {
+          '0%': { transform: 'scale(0.3)', opacity: '1' },
+          '100%': { transform: 'scale(2.5)', opacity: '0' },
+        },
+        'shockwave-2': {
+          '0%': { transform: 'scale(0.3)', opacity: '0.8' },
+          '100%': { transform: 'scale(3)', opacity: '0' },
+        },
+        'shockwave-3': {
+          '0%': { transform: 'scale(0.3)', opacity: '0.5' },
+          '100%': { transform: 'scale(3.5)', opacity: '0' },
+        },
+        // Speed lines shooting left from kick
+        'speed-line-1': {
+          '0%': { opacity: '0', transform: 'translateX(40px) scaleX(0)' },
+          '50%': { opacity: '1', transform: 'translateX(0) scaleX(1)' },
+          '100%': { opacity: '0', transform: 'translateX(-20px) scaleX(0.5)' },
+        },
+        'speed-line-2': {
+          '0%': { opacity: '0', transform: 'translateX(30px) scaleX(0)' },
+          '60%': { opacity: '1', transform: 'translateX(0) scaleX(1)' },
+          '100%': { opacity: '0', transform: 'translateX(-15px) scaleX(0.3)' },
+        },
+        'speed-line-3': {
+          '0%': { opacity: '0', transform: 'translateX(35px) scaleX(0)' },
+          '55%': { opacity: '1', transform: 'translateX(0) scaleX(1)' },
+          '100%': { opacity: '0', transform: 'translateX(-18px) scaleX(0.4)' },
+        },
       },
       animation: {
+        'slide-in-left': 'slide-in-left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         'slide-out-right': 'slide-out-right 0.25s ease-in forwards',
         'fade-in': 'fade-in 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.4s ease-out',
         'scale-in': 'scale-in 0.2s ease-out',
+        'hero-push-1': 'hero-push-1 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both',
+        'hero-push-2': 'hero-push-2 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both',
+        'hero-push-3': 'hero-push-3 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both',
+        'kick-enter': 'kick-enter 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0s both',
+        'shockwave-1': 'shockwave-1 2s ease-out 0.6s infinite',
+        'shockwave-2': 'shockwave-2 2s ease-out 1.2s infinite',
+        'shockwave-3': 'shockwave-3 2s ease-out 1.8s infinite',
+        'speed-line-1': 'speed-line-1 1.5s ease-out 0.3s infinite',
+        'speed-line-2': 'speed-line-2 1.5s ease-out 0.5s infinite',
+        'speed-line-3': 'speed-line-3 1.5s ease-out 0.7s infinite',
       },
     },
   },

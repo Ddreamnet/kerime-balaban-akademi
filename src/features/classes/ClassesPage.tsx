@@ -7,6 +7,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Button } from '@/components/ui/Button'
 import { ClassGroupCard } from './ClassGroupCard'
 import { classGroups, trainingDayLabels } from '@/data/classes'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { cn } from '@/utils/cn'
 
 const trainingDays = [
@@ -15,35 +16,18 @@ const trainingDays = [
   { key: 'cuma', abbr: 'Cum' },
 ]
 
-const faqs = [
-  {
-    q: 'Başlamak için hangi ekipman gereklidir?',
-    a: 'İlk derse spor kıyafetiyle gelebilirsiniz. Kayıt sonrası doboku ve temel koruyucu ekipman hakkında bilgi verilir.',
-  },
-  {
-    q: 'Kaç yaşından itibaren başlayabilir?',
-    a: "Minikler grubumuz 5 yaşından itibaren çocukları kabul etmektedir. Üst gruplar için minimum yaş koşulları ilgili grup kartında belirtilmiştir.",
-  },
-  {
-    q: 'Haftada kaç gün antrenman yapılıyor?',
-    a: 'Tüm gruplar Pazartesi, Çarşamba ve Cuma günleri antrenman yapar. Toplamda haftada 3 gündür.',
-  },
-  {
-    q: 'Kuşak sınavları ne zaman yapılıyor?',
-    a: 'Kuşak sınavları yılda yaklaşık 3 kez, antrenörün belirlediği tarihlerde gerçekleştirilir. Duyurular sayfamızdan takip edebilirsiniz.',
-  },
-]
-
 export function ClassesPage() {
   const navigate = useNavigate()
+  const settings = useSiteSettings()
+  const faqs = settings.class_faqs
 
   return (
     <>
       <PageHero
-        label="Ders Programı"
-        headline="Seviyene uygun"
-        highlight="grubunu bul."
-        body="Miniklerden ileri seviyeye kadar 4 farklı grup. Her çocuk kendi temposunda, güvenli ve eğlenceli bir ortamda gelişir."
+        label={settings.classes_hero_label}
+        headline={settings.classes_hero_headline}
+        highlight={settings.classes_hero_highlight}
+        body={settings.classes_hero_body}
       />
 
       {/* Schedule days strip */}
@@ -99,9 +83,9 @@ export function ClassesPage() {
         <Container>
           <div className="flex flex-col gap-10">
             <SectionHeader
-              label="Gruplarımız"
-              headline="4 grup,"
-              highlight="her yaşa uygun."
+              label={settings.classes_groups_label}
+              headline={settings.classes_groups_headline}
+              highlight={settings.classes_groups_highlight}
             />
 
             <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -118,24 +102,21 @@ export function ClassesPage() {
         <Container>
           <div className="flex flex-col gap-8">
             <SectionHeader
-              label="Günlük Program"
-              headline="Bir günde"
-              highlight="neler oluyor?"
-              body="Her antrenman günü aynı akış ile ilerler. Pazartesi, Çarşamba ve Cuma."
+              label={settings.classes_schedule_label}
+              headline={settings.classes_schedule_headline}
+              highlight={settings.classes_schedule_highlight}
+              body={settings.classes_schedule_body}
             />
 
             <div className="max-w-xl">
-              {[
-                { time: '15:30 – 16:30', group: 'Minikler Grubu', note: '5–7 yaş' },
-                { time: '16:30 – 17:30', group: 'Başlangıç Grubu', note: '8–12 yaş' },
-                { time: '17:30 – 19:00', group: 'Orta Seviye Grubu', note: '10–15 yaş' },
-                { time: '19:00 – 20:30', group: 'İleri Seviye Grubu', note: '13+ yaş' },
-              ].map((slot, i) => (
+              {settings.classes_schedule.map((slot, i) => (
                 <div key={i} className="flex gap-4 group">
                   {/* Timeline line */}
                   <div className="flex flex-col items-center">
                     <div className="w-3 h-3 rounded-full bg-primary mt-1 shrink-0" />
-                    {i < 3 && <div className="w-px flex-1 bg-surface-low my-1" />}
+                    {i < settings.classes_schedule.length - 1 && (
+                      <div className="w-px flex-1 bg-surface-low my-1" />
+                    )}
                   </div>
                   {/* Content */}
                   <div className="flex flex-col gap-0.5 pb-6">
@@ -146,7 +127,9 @@ export function ClassesPage() {
                       </span>
                     </div>
                     <span className="text-body-md text-on-surface/80">{slot.group}</span>
-                    <span className="text-body-sm text-on-surface/45">{slot.note}</span>
+                    {slot.note && (
+                      <span className="text-body-sm text-on-surface/45">{slot.note}</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -160,9 +143,9 @@ export function ClassesPage() {
         <Container narrow>
           <div className="flex flex-col gap-8">
             <SectionHeader
-              label="Sıkça Sorulan Sorular"
-              headline="Merak"
-              highlight="ettikleriniz."
+              label={settings.classes_faq_label}
+              headline={settings.classes_faq_headline}
+              highlight={settings.classes_faq_highlight}
               align="center"
             />
 
@@ -194,10 +177,10 @@ export function ClassesPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
             <div>
               <h2 className="font-display font-bold text-headline-lg text-white">
-                Hangi grup sana uygun?
+                {settings.classes_cta_headline}
               </h2>
               <p className="text-body-lg text-white/70 mt-1">
-                Bize ulaşın, birlikte doğru grubu bulalım.
+                {settings.classes_cta_body}
               </p>
             </div>
             <Button
@@ -206,7 +189,7 @@ export function ClassesPage() {
               onClick={() => navigate('/iletisim')}
               className="border-white/40 text-white hover:bg-white/10 hover:border-white/60 shrink-0"
             >
-              İletişime Geç
+              {settings.classes_cta_button_label}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

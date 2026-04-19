@@ -7,7 +7,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
-import { academyInfo, contactLinks } from '@/data/academyInfo'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 interface ContactFormValues {
   name: string
@@ -16,6 +16,7 @@ interface ContactFormValues {
 }
 
 export function ContactPage() {
+  const settings = useSiteSettings()
   const {
     register,
     handleSubmit,
@@ -29,7 +30,7 @@ export function ContactPage() {
       `Ad Soyad: ${data.name}\n` +
       `Telefon: ${data.phone}\n\n` +
       `Mesaj:\n${data.message}`
-    const href = `https://wa.me/${academyInfo.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`
+    const href = `https://wa.me/${settings.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`
     window.open(href, '_blank', 'noopener,noreferrer')
     reset()
   }
@@ -38,8 +39,8 @@ export function ContactPage() {
     <>
       <PageHero
         label="İletişim"
-        headline="Hep buradayız."
-        body="Soru, kayıt ya da bilgi için bize her kanaldan ulaşabilirsiniz. En hızlı yanıt WhatsApp'tan gelir."
+        headline={settings.contact_hero_headline}
+        body={settings.contact_hero_body}
       />
 
       <Section bg="default">
@@ -49,8 +50,8 @@ export function ContactPage() {
             {/* Contact form */}
             <div className="flex flex-col gap-6">
               <SectionHeader
-                label="Mesaj Gönderin"
-                headline="Bize yazın."
+                label={settings.contact_form_label}
+                headline={settings.contact_form_headline}
               />
 
               {isSubmitSuccessful ? (
@@ -123,14 +124,14 @@ export function ContactPage() {
             {/* Contact info sidebar */}
             <div className="flex flex-col gap-4 lg:sticky lg:top-28">
               <SectionHeader
-                label="Ulaşın"
-                headline="Direk iletişim."
+                label={settings.contact_channels_label}
+                headline={settings.contact_channels_headline}
               />
 
               {/* Contact cards */}
               <Card className="flex flex-col gap-4">
                 <a
-                  href={contactLinks.whatsapp}
+                  href={settings.whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-4 p-4 rounded-lg bg-green-50 hover:bg-green-100 transition-colors group"
@@ -140,7 +141,7 @@ export function ContactPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-green-800 text-body-md">WhatsApp</p>
-                    <p className="text-body-sm text-green-700/70">{academyInfo.phone}</p>
+                    <p className="text-body-sm text-green-700/70">{settings.phone}</p>
                   </div>
                   <span className="ml-auto text-green-700 text-body-sm font-semibold group-hover:underline">
                     Yaz →
@@ -148,7 +149,7 @@ export function ContactPage() {
                 </a>
 
                 <a
-                  href={contactLinks.phone}
+                  href={settings.phoneLink}
                   className="flex items-center gap-4 p-4 rounded-lg bg-surface-low hover:bg-surface-high transition-colors group"
                 >
                   <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
@@ -156,16 +157,16 @@ export function ContactPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-on-surface text-body-md">Telefon</p>
-                    <p className="text-body-sm text-on-surface/60">{academyInfo.phone}</p>
+                    <p className="text-body-sm text-on-surface/60">{settings.phone}</p>
                   </div>
                   <span className="ml-auto text-primary text-body-sm font-semibold group-hover:underline">
                     Ara →
                   </span>
                 </a>
 
-                {academyInfo.email && (
+                {settings.email && (
                   <a
-                    href={`mailto:${academyInfo.email}`}
+                    href={`mailto:${settings.email}`}
                     className="flex items-center gap-4 p-4 rounded-lg bg-surface-low hover:bg-surface-high transition-colors group"
                   >
                     <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
@@ -173,7 +174,7 @@ export function ContactPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-on-surface text-body-md">E-posta</p>
-                      <p className="text-body-sm text-on-surface/60">{academyInfo.email}</p>
+                      <p className="text-body-sm text-on-surface/60">{settings.email}</p>
                     </div>
                   </a>
                 )}
@@ -186,7 +187,7 @@ export function ContactPage() {
                     <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="font-semibold text-on-surface text-body-md">Adres</p>
-                      <p className="text-body-sm text-on-surface/60 mt-0.5">{academyInfo.address}</p>
+                      <p className="text-body-sm text-on-surface/60 mt-0.5">{settings.address}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -194,9 +195,9 @@ export function ContactPage() {
                     <div>
                       <p className="font-semibold text-on-surface text-body-md">Antrenman Saatleri</p>
                       <p className="text-body-sm text-on-surface/60 mt-0.5">
-                        Pazartesi, Çarşamba, Cuma
+                        {settings.contact_hours_days}
                       </p>
-                      <p className="text-body-sm text-on-surface/60">15:30 – 20:30</p>
+                      <p className="text-body-sm text-on-surface/60">{settings.contact_hours_time}</p>
                     </div>
                   </div>
                 </div>
@@ -209,9 +210,9 @@ export function ContactPage() {
                   <p className="text-body-sm text-on-surface/40">
                     Harita yakında eklenecek
                   </p>
-                  {academyInfo.google_maps_url && (
+                  {settings.google_maps_url && (
                     <a
-                      href={academyInfo.google_maps_url}
+                      href={settings.google_maps_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-body-sm text-primary hover:underline"

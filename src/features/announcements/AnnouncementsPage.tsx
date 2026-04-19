@@ -10,6 +10,7 @@ import {
 } from '@/data/announcements'
 import { listPublishedAnnouncements } from '@/lib/announcements'
 import type { Announcement, AnnouncementCategory } from '@/types/content.types'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { cn } from '@/utils/cn'
 
 type FilterKey = 'all' | AnnouncementCategory
@@ -26,6 +27,7 @@ export function AnnouncementsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all')
   const [all, setAll] = useState<Announcement[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const settings = useSiteSettings()
 
   useEffect(() => {
     const load = async () => {
@@ -51,10 +53,10 @@ export function AnnouncementsPage() {
   return (
     <>
       <PageHero
-        label="Duyurular"
-        headline="Akademiden"
-        highlight="son haberler."
-        body="Kuşak sınavları, etkinlikler, kapanış günleri ve akademi güncellemeleri burada yayınlanır."
+        label={settings.announcements_hero_label}
+        headline={settings.announcements_hero_headline}
+        highlight={settings.announcements_hero_highlight}
+        body={settings.announcements_hero_body}
       />
 
       <Section bg="default">

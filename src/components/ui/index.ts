@@ -10,3 +10,5 @@ export type { InputProps, TextareaProps } from './Input'
 
 export { Modal } from './Modal'
 export { Spinner } from './Spinner'
+
+export { AvatarUpload } from './AvatarUpload'
