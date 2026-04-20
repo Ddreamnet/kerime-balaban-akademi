@@ -1,0 +1,11 @@
+project_id = "kerime-balaban-akademi"
+
+# send-notification is invoked from the authenticated admin/coach UI,
+# but platform-level JWT verification was returning 401 on mobile sessions.
+# We disable platform verification and check the caller's role inside the
+# function against the profiles table — same guarantee, no 401 foot-gun.
+[functions.send-notification]
+verify_jwt = false
+
+[functions.daily-birthday-notifications]
+verify_jwt = false

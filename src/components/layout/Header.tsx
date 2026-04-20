@@ -31,6 +31,7 @@ export function Header() {
       <header
         className={cn(
           'fixed top-0 left-0 right-0 z-40',
+          'pt-safe pl-safe pr-safe',
           'transition-all duration-500 ease-out',
           scrolled
             ? 'glass shadow-ambient-md py-2.5'
@@ -173,8 +174,11 @@ export function Header() {
         </Container>
       </header>
 
-      {/* Spacer */}
-      <div className="h-16" aria-hidden="true" />
+      {/* Spacer — reserves header height plus the notch/status-bar safe area */}
+      <div
+        className="h-[calc(4rem+env(safe-area-inset-top,0px))]"
+        aria-hidden="true"
+      />
 
       {/* Mobile Drawer */}
       <MobileDrawer

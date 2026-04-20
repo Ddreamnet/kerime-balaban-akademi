@@ -12,6 +12,14 @@ import {
   isNativePlatform,
 } from './capacitor'
 
+/** Payload attached to a push delivery by the send-notification edge function. */
+export interface PushPayload {
+  notification_id?: string
+  type?: NotificationType
+  link_url?: string
+  [key: string]: unknown
+}
+
 export type NotificationType = 'general' | 'birthday' | 'payment' | 'exam' | 'attendance'
 export type NotificationTarget = 'all' | UserRole
 
@@ -21,7 +29,9 @@ export interface AppNotification {
   body: string
   target_role: NotificationTarget | null
   target_user: string | null
+  target_user_ids: string[] | null
   sent_by: string | null
+  sent_push_at: string | null
   type: NotificationType
   link_url: string | null
   created_at: string
@@ -34,8 +44,12 @@ export interface NotificationWithRead extends AppNotification {
 export interface ComposeInput {
   title: string
   body: string
+  /** 'all' / 'admin' / 'coach' / 'parent' — ignored when target_user_ids is provided */
   target_role?: NotificationTarget
+  /** Single-user target (legacy) */
   target_user?: string | null
+  /** Multi-user target — takes precedence over target_role when non-empty */
+  target_user_ids?: string[] | null
   type?: NotificationType
   link_url?: string | null
 }
@@ -46,7 +60,9 @@ function mapNotification(row: {
   body: string
   target_role: string | null
   target_user: string | null
+  target_user_ids?: string[] | null
   sent_by: string | null
+  sent_push_at?: string | null
   type: string
   link_url: string | null
   created_at: string
@@ -57,7 +73,9 @@ function mapNotification(row: {
     body: row.body,
     target_role: (row.target_role as NotificationTarget | null) ?? null,
     target_user: row.target_user,
+    target_user_ids: row.target_user_ids ?? null,
     sent_by: row.sent_by,
+    sent_push_at: row.sent_push_at ?? null,
     type: row.type as NotificationType,
     link_url: row.link_url,
     created_at: row.created_at,
@@ -127,13 +145,19 @@ export async function sendNotification(
   input: ComposeInput,
   sentBy: string | null,
 ): Promise<{ notification: AppNotification | null; error: string | null }> {
+  const hasUserIds = (input.target_user_ids?.length ?? 0) > 0
+  // When specific users are selected, target_role is meaningless — clear it
+  // so RLS doesn't accidentally widen visibility.
+  const targetRole = hasUserIds ? null : (input.target_role ?? 'all')
+
   const { data, error } = await supabase
     .from('notifications')
     .insert({
       title: input.title,
       body: input.body,
-      target_role: input.target_role ?? 'all',
+      target_role: targetRole,
       target_user: input.target_user ?? null,
+      target_user_ids: hasUserIds ? input.target_user_ids! : null,
       type: input.type ?? 'general',
       link_url: input.link_url ?? null,
       sent_by: sentBy,
@@ -141,7 +165,16 @@ export async function sendNotification(
     .select('*')
     .single()
 
-  if (error || !data) return { notification: null, error: error?.message ?? 'Gönderme başarısız.' }
+  if (error || !data) {
+    return { notification: null, error: error?.message ?? 'Gönderme başarısız.' }
+  }
+
+  // Fire-and-forget push delivery via edge function. The notification row
+  // is already saved for the in-app inbox; push is best-effort on top of that.
+  void supabase.functions
+    .invoke('send-notification', { body: { notification_id: data.id } })
+    .catch((err) => console.error('[sendNotification] push invoke failed', err))
+
   return { notification: mapNotification(data), error: null }
 }
 
@@ -189,35 +222,45 @@ export const TARGET_LABELS: Record<NotificationTarget, string> = {
  * No-op on web.
  */
 export async function registerPushForUser(userId: string): Promise<void> {
-  if (!isNativePlatform()) return
+  if (!isNativePlatform()) {
+    console.debug('[push] skipped — not on native platform')
+    return
+  }
 
   const granted = await CapPushBridge.requestPermission()
-  if (!granted) return
+  if (!granted) {
+    console.warn('[push] permission not granted — device will not receive notifications')
+    return
+  }
 
   // Also ensure local-notification permission (birthday reminders, etc.).
   await CapLocalBridge.requestPermission()
 
   const token = await CapPushBridge.getToken()
-  if (!token) return
+  if (!token) {
+    console.error('[push] no FCM token returned — check Firebase / Google Play Services')
+    return
+  }
 
   const platform = getPlatform()
+  const now = new Date().toISOString()
 
-  // Look up existing row for this exact (user, token) — avoid relying on a
-  // specific unique constraint being present in the DB.
-  const { data: existing } = await supabase
+  console.info('[push] upserting token for user', userId, 'platform', platform)
+
+  // Upsert on the (user_id, token) unique index — fresh rows get inserted,
+  // known rows just update last_used_at.
+  const { error } = await supabase
     .from('device_tokens')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('token', token)
-    .maybeSingle()
+    .upsert(
+      { user_id: userId, token, platform, last_used_at: now, last_error: null },
+      { onConflict: 'user_id,token' },
+    )
 
-  if (existing) return
-
-  await supabase.from('device_tokens').insert({
-    user_id: userId,
-    token,
-    platform,
-  })
+  if (error) {
+    console.error('[push] failed to save device token', error)
+  } else {
+    console.info('[push] device token saved')
+  }
 }
 
 /**
@@ -235,4 +278,36 @@ export async function unregisterPushForUser(userId: string): Promise<void> {
     .delete()
     .eq('user_id', userId)
     .eq('token', token)
+}
+
+// ─── Push listeners (foreground + tap) ──────────────────────────────────────
+
+/**
+ * Wire foreground + tap listeners once per app session.
+ *
+ * - `onForeground`: fired when a push arrives while the app is open.
+ *   iOS will still show the system banner (presentationOptions in config);
+ *   Android will also show a system notification. Use this callback for
+ *   in-app toasts, badge refreshes, etc.
+ *
+ * - `onTap`: fired when the user taps a delivered notification. Phase 2 will
+ *   use this to open a dialog or deep-link to a page.
+ */
+export function registerPushListeners(handlers: {
+  onForeground?: (payload: { title: string; body: string; data: PushPayload }) => void
+  onTap?: (data: PushPayload) => void
+}): void {
+  if (!isNativePlatform()) return
+
+  if (handlers.onForeground) {
+    CapPushBridge.onReceived((n) => {
+      handlers.onForeground!({ title: n.title, body: n.body, data: n.data as PushPayload })
+    })
+  }
+
+  if (handlers.onTap) {
+    CapPushBridge.onTapped((data) => {
+      handlers.onTap!(data as PushPayload)
+    })
+  }
 }

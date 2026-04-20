@@ -61,5 +61,7 @@
 	<string>Video çekerken ses kaydı için mikrofona erişmek istiyoruz.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Sporcu belgelerinizi yüklemek için dosyalarınıza erişmek istiyoruz.</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 </dict>
 </plist>

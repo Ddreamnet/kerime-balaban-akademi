@@ -119,7 +119,7 @@ export function DashboardLayout({ navItems, title }: DashboardLayoutProps) {
   return (
     <div className="min-h-dvh flex bg-surface">
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-surface-card shadow-ambient">
+      <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-surface-card shadow-ambient pt-safe pb-safe pl-safe">
         <div className="px-5 py-4 border-b border-surface-low">
           <NavLink
             to={panelHome}
@@ -191,7 +191,7 @@ export function DashboardLayout({ navItems, title }: DashboardLayoutProps) {
       </aside>
 
       {/* ── Mobile top bar ── */}
-      <div className="fixed top-0 left-0 right-0 z-30 lg:hidden bg-surface-card shadow-ambient">
+      <div className="fixed top-0 left-0 right-0 z-30 lg:hidden bg-surface-card shadow-ambient pt-safe pl-safe pr-safe">
         <div className="flex items-center gap-2 px-3 py-2.5">
           {/* Back or menu */}
           {!isRootPanel ? (
@@ -240,7 +240,7 @@ export function DashboardLayout({ navItems, title }: DashboardLayoutProps) {
           />
 
           {/* Panel */}
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-surface-card shadow-ambient-lg animate-slide-in-left flex flex-col">
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-surface-card shadow-ambient-lg animate-slide-in-left flex flex-col pt-safe pb-safe pl-safe">
             {/* Header */}
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-surface-low">
               <NavLink
@@ -326,9 +326,11 @@ export function DashboardLayout({ navItems, title }: DashboardLayoutProps) {
 
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile spacer for fixed top bar */}
-        <div className="h-[60px] lg:hidden shrink-0" />
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        {/* Mobile spacer for fixed top bar — includes status-bar safe area */}
+        <div
+          className="h-[calc(60px+env(safe-area-inset-top,0px))] lg:hidden shrink-0"
+        />
+        <main className="flex-1 p-4 md:p-8 pb-safe overflow-y-auto">
           <Outlet />
         </main>
       </div>

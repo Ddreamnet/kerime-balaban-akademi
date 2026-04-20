@@ -55,6 +55,33 @@ export async function initCapacitor(): Promise<void> {
   } else {
     await StatusBar.setStyle({ style: Style.Dark })
     await StatusBar.setBackgroundColor({ color: '#b7131a' })
+    // Keep the WebView sitting BELOW the status bar on Android so
+    // fixed-position headers don't clip under the system bar.
+    try {
+      await StatusBar.setOverlaysWebView({ overlay: false })
+    } catch {
+      // Older devices may not support this — pt-safe handles the fallback.
+    }
+
+    // Create the "default" notification channel used by FCM pushes.
+    // Without a matching channel, Android 8+ silently demotes pushes to
+    // the low-importance "fcm_fallback_notification_channel" and no
+    // heads-up notification is shown.
+    try {
+      await CapLocal.createChannel({
+        id: 'default',
+        name: 'Bildirimler',
+        description: 'Genel duyurular, hatırlatmalar ve güncellemeler',
+        importance: 5, // IMPORTANCE_HIGH → heads-up
+        visibility: 1,
+        sound: 'default',
+        vibration: true,
+        lights: true,
+        lightColor: '#b7131a',
+      })
+    } catch (err) {
+      console.warn('[capacitor] createChannel failed', err)
+    }
   }
 
   // Handle back button on Android
@@ -85,21 +112,64 @@ export const PushNotifications = {
   async requestPermission(): Promise<boolean> {
     if (!isNativePlatform()) return false
 
-    const result = await CapPush.requestPermissions()
-    return result.receive === 'granted'
+    try {
+      const existing = await CapPush.checkPermissions()
+      console.info('[push] current permission:', existing.receive)
+      if (existing.receive === 'granted') return true
+
+      // Always call requestPermissions for any non-granted state. Android
+      // shows the system dialog exactly once per install; subsequent calls
+      // resolve immediately with the cached answer — cheap and safe.
+      const result = await CapPush.requestPermissions()
+      console.info('[push] permission after request:', result.receive)
+      if (result.receive !== 'granted') {
+        console.warn(
+          '[push] permission not granted. If no dialog appeared, the OS has ' +
+          'already cached an answer — uninstall the app and reinstall, or ' +
+          'enable notifications manually in Settings → Apps → Kerime Balaban ' +
+          'Akademi → Notifications.',
+        )
+      }
+      return result.receive === 'granted'
+    } catch (err) {
+      console.error('[push] requestPermission failed', err)
+      return false
+    }
   },
 
   async getToken(): Promise<string | null> {
     if (!isNativePlatform()) return null
 
-    return new Promise((resolve) => {
-      CapPush.addListener('registration', (token: Token) => {
-        resolve(token.value)
+    return new Promise(async (resolve) => {
+      let settled = false
+      let regHandle: { remove: () => Promise<void> } | null = null
+      let errHandle: { remove: () => Promise<void> } | null = null
+
+      const done = (value: string | null, reason: string) => {
+        if (settled) return
+        settled = true
+        console.info('[push] getToken →', value ? 'got token' : `failed: ${reason}`)
+        void regHandle?.remove()
+        void errHandle?.remove()
+        resolve(value)
+      }
+
+      regHandle = await CapPush.addListener('registration', (token: Token) => {
+        done(token.value, 'ok')
       })
-      CapPush.addListener('registrationError', () => {
-        resolve(null)
+      errHandle = await CapPush.addListener('registrationError', (err) => {
+        done(null, `registrationError: ${JSON.stringify(err)}`)
       })
-      CapPush.register()
+
+      try {
+        await CapPush.register()
+      } catch (err) {
+        done(null, `register() threw: ${String(err)}`)
+      }
+
+      // Safety timeout — if FCM never responds (e.g. Google Play Services
+      // outage, misconfigured google-services.json) we'd otherwise hang.
+      setTimeout(() => done(null, 'timeout after 15s'), 15_000)
     })
   },
 

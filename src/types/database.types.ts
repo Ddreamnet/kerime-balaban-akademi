@@ -223,6 +223,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          last_error: string | null
+          last_used_at: string | null
           platform: string
           token: string
           user_id: string
@@ -230,6 +232,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          last_error?: string | null
+          last_used_at?: string | null
           platform: string
           token: string
           user_id: string
@@ -237,6 +241,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          last_error?: string | null
+          last_used_at?: string | null
           platform?: string
           token?: string
           user_id?: string
@@ -405,8 +411,10 @@ export type Database = {
           id: string
           link_url: string | null
           sent_by: string | null
+          sent_push_at: string | null
           target_role: string | null
           target_user: string | null
+          target_user_ids: string[] | null
           title: string
           type: string
         }
@@ -416,8 +424,10 @@ export type Database = {
           id?: string
           link_url?: string | null
           sent_by?: string | null
+          sent_push_at?: string | null
           target_role?: string | null
           target_user?: string | null
+          target_user_ids?: string[] | null
           title: string
           type?: string
         }
@@ -427,8 +437,10 @@ export type Database = {
           id?: string
           link_url?: string | null
           sent_by?: string | null
+          sent_push_at?: string | null
           target_role?: string | null
           target_user?: string | null
+          target_user_ids?: string[] | null
           title?: string
           type?: string
         }

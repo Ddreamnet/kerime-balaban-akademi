@@ -50,7 +50,7 @@ export function MobileDrawer({ isOpen, onClose, navItems }: MobileDrawerProps) {
       />
 
       {/* Drawer panel */}
-      <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-surface-card shadow-ambient-lg animate-slide-in-right flex flex-col">
+      <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-surface-card shadow-ambient-lg animate-slide-in-right flex flex-col pt-safe pb-safe pr-safe">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-low">
           <Link
