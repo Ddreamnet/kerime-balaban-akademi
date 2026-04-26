@@ -49,7 +49,10 @@ export async function initCapacitor(): Promise<void> {
   // Hide splash screen after app is ready
   await SplashScreen.hide()
 
-  // Status bar style
+  // Status bar style.
+  // Default to "Dark" (dark icons on light backgrounds) — most pages have a
+  // light surface. Pages with a dark hero call `setNativeStatusBarLight(true)`
+  // on mount to flip to white icons.
   if (getPlatform() === 'ios') {
     await StatusBar.setStyle({ style: Style.Dark })
   } else {
@@ -103,6 +106,22 @@ export async function initCapacitor(): Promise<void> {
     Keyboard.addListener('keyboardWillHide', () => {
       document.body.classList.remove('keyboard-open')
     })
+  }
+}
+
+/**
+ * Toggle native status-bar text/icon color at runtime.
+ *   • `true`  → light icons (white) — for pages with dark hero backgrounds
+ *   • `false` → dark icons — for pages with light surface
+ *
+ * Safe to call on web — it's a no-op there.
+ */
+export async function setNativeStatusBarLight(light: boolean): Promise<void> {
+  if (!isNativePlatform()) return
+  try {
+    await StatusBar.setStyle({ style: light ? Style.Light : Style.Dark })
+  } catch (err) {
+    console.warn('[capacitor] setNativeStatusBarLight failed', err)
   }
 }
 

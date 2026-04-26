@@ -5,8 +5,13 @@ import { ClassPreviewSection } from './ClassPreviewSection'
 import { AnnouncementsSection } from './AnnouncementsSection'
 import { ProductsPreviewSection } from './ProductsPreviewSection'
 import { CTASection } from './CTASection'
+import { useStatusBarStyle } from '@/hooks/useStatusBarStyle'
 
 export function HomePage() {
+  // Hero is dark — flip the iOS/Android status-bar icons to light so they
+  // stay visible against the burgundy backdrop. Restored on unmount.
+  useStatusBarStyle({ light: true })
+
   return (
     <>
       <SEO

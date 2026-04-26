@@ -9,7 +9,15 @@ export function HeroSection() {
   const settings = useSiteSettings()
 
   return (
-    <section className="relative bg-on-surface overflow-hidden min-h-[85dvh] flex items-start -mt-16 pt-16">
+    <section
+      className="
+        relative bg-on-surface overflow-hidden min-h-[85dvh] flex items-start
+        -mt-[calc(4rem_+_env(safe-area-inset-top,0px))]
+        sm:-mt-[calc(4.75rem_+_env(safe-area-inset-top,0px))]
+        pt-[calc(4rem_+_env(safe-area-inset-top,0px))]
+        sm:pt-[calc(4.75rem_+_env(safe-area-inset-top,0px))]
+      "
+    >
       {/* ── Background layers ── */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         {/* Deep red diagonal bands */}
