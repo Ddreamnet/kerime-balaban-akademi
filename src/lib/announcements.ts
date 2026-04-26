@@ -53,6 +53,19 @@ export async function listPublishedAnnouncements(): Promise<Announcement[]> {
   return data.map(mapAnnouncement)
 }
 
+/** Public: fetch a single published announcement by id */
+export async function getPublishedAnnouncement(id: string): Promise<Announcement | null> {
+  const { data, error } = await supabase
+    .from('announcements')
+    .select('*')
+    .eq('id', id)
+    .eq('is_published', true)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return mapAnnouncement(data)
+}
+
 /** Admin: all announcements including unpublished drafts */
 export async function listAllAnnouncements(): Promise<Announcement[]> {
   const { data, error } = await supabase

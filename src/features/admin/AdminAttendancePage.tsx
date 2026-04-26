@@ -24,6 +24,7 @@ import {
   type AttendanceStatus,
 } from '@/lib/attendance'
 import type { ClassGroup } from '@/types/content.types'
+import { PageHeader } from '@/components/dashboard'
 import { cn } from '@/utils/cn'
 import { formatDateLong, formatDateShort } from '@/utils/format'
 
@@ -131,14 +132,12 @@ export function AdminAttendancePage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Devamsızlık</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Tüm gruplar ve öğrencilerin yoklama durumunu görüntüleyin.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Devamsızlık"
+        description="Tüm gruplar ve öğrencilerin yoklama durumunu görüntüleyin."
+      />
+
 
       {/* View mode toggle */}
       <div className="flex gap-2">

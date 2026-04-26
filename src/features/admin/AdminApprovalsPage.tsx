@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Check, X, Mail, Phone, Clock } from 'lucide-react'
+import { Check, X, Mail, Phone, Clock, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import { listProfiles, approveUser, rejectUser } from '@/lib/auth'
 import type { UserProfile } from '@/types/auth.types'
 import { ROLE_LABELS } from '@/types/auth.types'
@@ -46,22 +47,22 @@ export function AdminApprovalsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Onay Bekleyenler</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Yeni kaydolan kullanıcıları inceleyip onaylayın veya reddedin.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Onay Bekleyenler"
+        description="Yeni kaydolan kullanıcıları inceleyip onaylayın veya reddedin."
+      />
 
-      {/* Content */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
       ) : pending.length === 0 ? (
-        <EmptyState />
+        <EmptyState
+          icon={Inbox}
+          title="Onay bekleyen kullanıcı yok"
+          description="Yeni kayıtlar burada görünecek. Hepsi temiz!"
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {pending.map((p) => (
@@ -76,24 +77,6 @@ export function AdminApprovalsPage() {
         </div>
       )}
     </div>
-  )
-}
-
-function EmptyState() {
-  return (
-    <Card className="flex flex-col items-center gap-3 py-12 text-center">
-      <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-        <Check className="w-7 h-7 text-green-600" />
-      </div>
-      <div>
-        <p className="font-display font-bold text-title-lg text-on-surface">
-          Onay bekleyen kullanıcı yok
-        </p>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Yeni kayıtlar bu sayfada görünecek.
-        </p>
-      </div>
-    </Card>
   )
 }
 

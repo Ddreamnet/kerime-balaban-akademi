@@ -30,9 +30,12 @@ export interface Announcement {
 export type TrainingDay = 'pazartesi' | 'carsamba' | 'cuma'
 
 export type BeltLevel =
-  | 'baslangic'   // Beginner (white–yellow)
-  | 'orta'        // Intermediate (green–blue)
-  | 'ileri'       // Advanced (red–black)
+  | 'beyaz'
+  | 'sari'
+  | 'yesil'
+  | 'mavi'
+  | 'kirmizi'
+  | 'siyah'
 
 export interface ClassGroup {
   id: string

@@ -4,8 +4,11 @@ import { GraduationCap, ChevronRight, Search } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
 import { listActiveClasses } from '@/lib/classes'
+import { listChildIdsForCoach } from '@/lib/assignments'
+import { useAuth } from '@/hooks/useAuth'
 import { beltLevelLabels } from '@/data/classes'
 import type { ClassGroup } from '@/types/content.types'
 import { cn } from '@/utils/cn'
@@ -15,6 +18,7 @@ import { cn } from '@/utils/cn'
  * Click a student to view/edit their basic info (name, avatar).
  */
 export function CoachStudentsPage() {
+  const { user } = useAuth()
   const [students, setStudents] = useState<ChildWithParent[]>([])
   const [classes, setClasses] = useState<ClassGroup[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -22,15 +26,24 @@ export function CoachStudentsPage() {
   const [filterClassId, setFilterClassId] = useState<string | 'all'>('all')
 
   useEffect(() => {
-    const load = async () => {
+    if (!user?.id) return
+    let cancelled = false
+    void (async () => {
       setIsLoading(true)
-      const [list, cls] = await Promise.all([listAllChildren(), listActiveClasses()])
-      setStudents(list)
+      const [list, cls, myChildIds] = await Promise.all([
+        listAllChildren(),
+        listActiveClasses(),
+        listChildIdsForCoach(user.id),
+      ])
+      if (cancelled) return
+      setStudents(list.filter((s) => myChildIds.has(s.id)))
       setClasses(cls)
       setIsLoading(false)
+    })()
+    return () => {
+      cancelled = true
     }
-    void load()
-  }, [])
+  }, [user?.id])
 
   const visible = students.filter((s) => {
     if (filterClassId !== 'all' && s.class_group_id !== filterClassId) return false
@@ -45,13 +58,16 @@ export function CoachStudentsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Antrenör Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Öğrenciler</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          {students.length} öğrenci kayıtlı. İsimlerini veya profil fotoğraflarını düzenleyebilirsiniz.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Antrenör Paneli"
+        title="Öğrenciler"
+        description={
+          students.length === 0
+            ? 'Size henüz öğrenci atanmadı. Yönetici panelinden atama yapılması gerekiyor.'
+            : `Size atanmış ${students.length} öğrenci.`
+        }
+      />
+
 
       {/* Filters */}
       <div className="flex flex-col gap-3">
@@ -89,19 +105,15 @@ export function CoachStudentsPage() {
           <Spinner size="lg" />
         </div>
       ) : visible.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-surface-low flex items-center justify-center">
-            <GraduationCap className="w-7 h-7 text-on-surface/40" />
-          </div>
-          <p className="font-display font-bold text-title-lg text-on-surface">
-            {students.length === 0 ? 'Henüz öğrenci yok' : 'Filtrelere uyan öğrenci yok'}
-          </p>
-          <p className="text-body-md text-on-surface/60">
-            {students.length === 0
-              ? 'Veliler çocuklarını kaydettikçe burada listelenecekler.'
-              : 'Arama veya filtreleri temizleyin.'}
-          </p>
-        </Card>
+        <EmptyState
+          icon={GraduationCap}
+          title={students.length === 0 ? 'Henüz öğrenciniz yok' : 'Filtrelere uyan öğrenci yok'}
+          description={
+            students.length === 0
+              ? 'Yönetici size öğrenci atadığında burada listelenecek.'
+              : 'Arama veya filtreleri temizleyin.'
+          }
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {visible.map((s) => {

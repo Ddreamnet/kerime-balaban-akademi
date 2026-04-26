@@ -4,6 +4,7 @@ import { Users, Clock, ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import { listActiveClasses } from '@/lib/classes'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
 import { beltLevelLabels } from '@/data/classes'
@@ -44,26 +45,18 @@ export function CoachGroupsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Antrenor Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Gruplar</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Aktif ders grupları ve kayıtlı ogrenciler.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Antrenör Paneli"
+        title="Gruplar"
+        description="Aktif ders grupları ve kayıtlı öğrenciler."
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
       ) : classes.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <Users className="w-10 h-10 text-on-surface/30" />
-          <p className="font-display font-bold text-title-lg text-on-surface">
-            Aktif grup yok
-          </p>
-        </Card>
+        <EmptyState icon={Users} title="Aktif grup yok" />
       ) : (
         <div className="flex flex-col gap-4">
           {classes.map((cls) => {

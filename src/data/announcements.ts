@@ -11,7 +11,7 @@ export const announcements: Announcement[] = [
     excerpt:
       'Nisan ayı kuşak terfi sınavımız 20 Nisan Cumartesi günü saat 10:00\'da gerçekleşecektir. Tüm sporculara başarılar!',
     content:
-      'Değerli öğrencilerimiz ve velilerimiz,\n\nNisan 2024 kuşak terfi sınavımız 20 Nisan Cumartesi günü saat 10:00\'da akademimizde gerçekleştirilecektir.\n\nSınava katılacak öğrencilerin dobokularını giymiş olarak en geç saat 09:30\'da hazır olmaları beklenmektedir. Velilerin de törene katılımı memnuniyetle karşılanır.\n\nTüm sporcularımıza başarılar dileriz.',
+      'Değerli öğrencilerimiz ve velilerimiz,\n\nNisan 2024 kuşak terfi sınavımız 20 Nisan Cumartesi günü saat 10:00\'da akademimizde gerçekleştirilecektir.\n\nSınava katılacak öğrencilerin larını giymiş olarak en geç saat 09:30\'da hazır olmaları beklenmektedir. Velilerin de törene katılımı memnuniyetle karşılanır.\n\nTüm sporcularımıza başarılar dileriz.',
     category: 'sinav',
     image_url: undefined,
     published_at: '2024-04-01T10:00:00.000Z',

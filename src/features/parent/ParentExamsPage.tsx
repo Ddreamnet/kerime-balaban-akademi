@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/dashboard'
 import { useAuth } from '@/hooks/useAuth'
 import { getMyChild, type Child } from '@/lib/children'
 import { getChildExamHistory, type ExamWithChild } from '@/lib/exams'
@@ -43,13 +44,12 @@ export function ParentExamsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Veli Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Sınavlar</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Çocuğunuzun kuşak terfi sınavları ve sonuçları.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Veli Paneli"
+        title="Sınavlar"
+        description="Çocuğunuzun kuşak terfi sınavları ve sonuçları."
+      />
+
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">

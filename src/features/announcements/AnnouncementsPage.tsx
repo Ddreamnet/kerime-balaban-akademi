@@ -3,6 +3,7 @@ import { PageHero } from '@/components/layout/PageHero'
 import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { Spinner } from '@/components/ui/Spinner'
+import { SEO } from '@/components/SEO'
 import { AnnouncementCard } from './AnnouncementCard'
 import {
   announcements as staticAnnouncements,
@@ -52,6 +53,11 @@ export function AnnouncementsPage() {
 
   return (
     <>
+      <SEO
+        title="Duyurular — Kerime Balaban Taekwondo Akademisi"
+        description="Kerime Balaban Akademi duyuruları: kuşak sınavları, müsabaka sonuçları, etkinlikler ve akademi haberleri. Bartın taekwondo camiasının güncel bilgileri."
+        path="/duyurular"
+      />
       <PageHero
         label={settings.announcements_hero_label}
         headline={settings.announcements_hero_headline}

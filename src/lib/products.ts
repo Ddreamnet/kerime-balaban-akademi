@@ -69,6 +69,17 @@ export async function listAllProducts(): Promise<Product[]> {
 export async function createProduct(
   input: ProductInput,
 ): Promise<{ product: Product | null; error: string | null }> {
+  let sortOrder = input.sort_order
+  if (sortOrder === undefined) {
+    const { data: maxRow } = await supabase
+      .from('products')
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    sortOrder = (maxRow?.sort_order ?? 0) + 1
+  }
+
   const { data, error } = await supabase
     .from('products')
     .insert({
@@ -80,7 +91,7 @@ export async function createProduct(
       is_inquiry_only: input.is_inquiry_only ?? true,
       is_featured: input.is_featured ?? false,
       is_available: input.is_available ?? true,
-      sort_order: input.sort_order ?? 0,
+      sort_order: sortOrder,
     })
     .select('*')
     .single()
@@ -117,4 +128,15 @@ export async function updateProduct(
 export async function deleteProduct(id: string): Promise<{ error: string | null }> {
   const { error } = await supabase.from('products').delete().eq('id', id)
   return { error: error?.message ?? null }
+}
+
+/** Persist a new ordering. `orderedIds` is the desired order; sort_order is set to its index + 1. */
+export async function reorderProducts(orderedIds: string[]): Promise<{ error: string | null }> {
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from('products').update({ sort_order: index + 1 }).eq('id', id),
+    ),
+  )
+  const failed = results.find((r) => r.error)
+  return { error: failed?.error?.message ?? null }
 }

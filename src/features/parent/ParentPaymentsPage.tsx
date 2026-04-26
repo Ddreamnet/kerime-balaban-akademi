@@ -7,27 +7,37 @@ import {
   Clock,
   MessageCircle,
   Baby,
+  CalendarClock,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
+import { PageHeader, PanelCard } from '@/components/dashboard'
 import { getMyChild, type Child } from '@/lib/children'
 import {
   listPaymentsForChild,
-  currentPeriod,
-  formatPeriod,
+  derivePaymentStatus,
+  daysUntilDue,
+  formatPeriodRange,
+  formatDate,
   computePaymentSummary,
-  PAYMENT_STATUS_LABELS,
-  TURKISH_MONTHS,
+  DERIVED_PAYMENT_STATUS_LABELS,
   type PaymentRecord,
-  type PaymentStatus,
+  type DerivedPaymentStatus,
 } from '@/lib/payments'
 import { academyInfo, contactLinks } from '@/data/academyInfo'
-import { formatCurrency, formatDateLong, whatsappUrl } from '@/utils/format'
+import { formatCurrency, whatsappUrl } from '@/utils/format'
 import { cn } from '@/utils/cn'
 
+/**
+ * Parent: Payments — per-child billing cycle view.
+ *
+ * Top: large "next due" spotlight card (or "all caught up" if nothing pending).
+ * Then summary counts, then chronological history. Period labels show
+ * "18 Mart → 17 Nisan" instead of a single calendar month.
+ */
 export function ParentPaymentsPage() {
   const { user } = useAuth()
   const [child, setChild] = useState<Child | null>(null)
@@ -51,22 +61,25 @@ export function ParentPaymentsPage() {
 
   const summary = useMemo(() => computePaymentSummary(records), [records])
 
-  const { month: currentMonth, year: currentYear } = currentPeriod()
-  const currentStatus = useMemo(() => {
-    return records.find(
-      (r) => r.period_month === currentMonth && r.period_year === currentYear,
-    )
-  }, [records, currentMonth, currentYear])
+  // The "next due" card highlights the most urgent unpaid period:
+  //   1. Earliest overdue, else
+  //   2. Earliest pending (closest upcoming due date)
+  const spotlight = useMemo(() => {
+    const now = new Date()
+    const unpaid = records
+      .filter((r) => derivePaymentStatus(r, now) !== 'paid')
+      .sort((a, b) => a.due_date.localeCompare(b.due_date))
+    return unpaid[0] ?? null
+  }, [records])
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Veli Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Ödemeler</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Aidat ödeme durumu ve geçmişi.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Veli Paneli"
+        title="Ödemeler"
+        description="Aylık ödeme dönemi ve geçmişi."
+      />
+
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
@@ -74,22 +87,38 @@ export function ParentPaymentsPage() {
         </div>
       ) : !child ? (
         <NoChildCard />
+      ) : !child.billing_start_date ? (
+        <NotConfiguredCard />
       ) : (
         <>
-          {/* Current month card */}
-          <CurrentMonthCard
-            status={currentStatus?.status}
-            amount={currentStatus?.amount ?? null}
-            month={currentMonth}
-            year={currentYear}
-          />
+          {/* Spotlight: next due (or "all clear") */}
+          {spotlight ? (
+            <SpotlightCard record={spotlight} />
+          ) : (
+            <AllClearCard />
+          )}
 
           {/* Summary */}
           {records.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
-              <SummaryTile label="Ödenen" value={summary.paidMonths} variant="success" icon={Check} />
-              <SummaryTile label="Gecikmiş" value={summary.lateMonths} variant="danger" icon={AlertTriangle} />
-              <SummaryTile label="Ödenmedi" value={summary.unpaidMonths} variant="warning" icon={Clock} />
+              <SummaryTile
+                label="Ödenen"
+                value={summary.paidCount}
+                variant="success"
+                icon={Check}
+              />
+              <SummaryTile
+                label="Gecikmiş"
+                value={summary.overdueCount}
+                variant="danger"
+                icon={AlertTriangle}
+              />
+              <SummaryTile
+                label="Bekleyen"
+                value={summary.pendingCount}
+                variant="warning"
+                icon={Clock}
+              />
             </div>
           )}
 
@@ -112,7 +141,7 @@ export function ParentPaymentsPage() {
                 Henüz ödeme kaydı yok
               </p>
               <p className="text-body-md text-on-surface/60 max-w-sm">
-                Yönetici ödemeleri işaretledikçe burada listelenecekler.
+                Yönetici ödeme planınızı belirledikçe burada listelenecek.
               </p>
             </Card>
           )}
@@ -122,7 +151,7 @@ export function ParentPaymentsPage() {
   )
 }
 
-// ─── Empty state ─────────────────────────────────────────────────────────────
+// ─── Empty states ───────────────────────────────────────────────────────────
 
 function NoChildCard() {
   return (
@@ -145,60 +174,83 @@ function NoChildCard() {
   )
 }
 
-// ─── Current month spotlight ────────────────────────────────────────────────
-
-interface CurrentMonthCardProps {
-  status: PaymentStatus | undefined
-  amount: number | null
-  month: number
-  year: number
+function NotConfiguredCard() {
+  return (
+    <Card className="flex flex-col items-center gap-3 py-12 text-center">
+      <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center">
+        <CalendarClock className="w-7 h-7 text-amber-700" />
+      </div>
+      <p className="font-display font-bold text-title-lg text-on-surface">
+        Ödeme planı henüz oluşturulmadı
+      </p>
+      <p className="text-body-md text-on-surface/60 max-w-md">
+        Akademi yönetimi başlangıç tarihinizi girince aylık ödeme dönemleriniz
+        burada görünecek. Bilgi için iletişime geçebilirsiniz.
+      </p>
+      <a
+        href={contactLinks.whatsapp}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 mt-1 px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-body-sm font-semibold"
+      >
+        <MessageCircle className="w-4 h-4" />
+        WhatsApp
+      </a>
+    </Card>
+  )
 }
 
-function CurrentMonthCard({ status, amount, month, year }: CurrentMonthCardProps) {
+function AllClearCard() {
+  return (
+    <PanelCard tone="elite" decorated padding="md">
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+          <Check className="w-6 h-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="panel-kicker-inverted">Tüm Ödemeler Güncel</p>
+          <p className="font-display font-black text-headline-md leading-tight mt-0.5 text-white">
+            Bekleyen ödeme yok ✓
+          </p>
+          <p className="text-body-md text-white/85 mt-1">
+            Bir sonraki ödeme dönemi açıldığında burada bilgilendirileceksiniz.
+          </p>
+        </div>
+      </div>
+    </PanelCard>
+  )
+}
+
+// ─── Spotlight: next due ────────────────────────────────────────────────────
+
+function SpotlightCard({ record }: { record: PaymentRecord }) {
+  const derived = derivePaymentStatus(record)
+  const days = daysUntilDue(record.due_date)
+
   const whatsappHref = whatsappUrl(
     academyInfo.whatsapp,
-    `Merhaba, ${formatPeriod(month, year)} ödemesi için bilgi almak istiyorum.`,
+    `Merhaba, ${formatPeriodRange(record.period_start, record.period_end)} dönemi ödemesi için bilgi almak istiyorum.`,
   )
 
-  if (status === 'paid') {
+  if (derived === 'overdue') {
     return (
-      <Card className="bg-gradient-to-r from-green-600 to-green-500 text-white border-0">
+      <PanelCard tone="spotlight" decorated padding="md">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-            <Check className="w-6 h-6" />
+            <AlertTriangle className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-label-md uppercase tracking-widest text-white/70">
-              {formatPeriod(month, year)}
+            <p className="panel-kicker-inverted">
+              {formatPeriodRange(record.period_start, record.period_end)}
             </p>
-            <p className="font-display font-black text-headline-md leading-tight mt-0.5">
-              Ödendi ✓
+            <p className="font-display font-black text-headline-md leading-tight mt-0.5 text-white">
+              {Math.abs(days)} gün geçti
             </p>
-            {amount !== null && (
-              <p className="text-body-md text-white/80 mt-1">{formatCurrency(amount)}</p>
-            )}
-          </div>
-        </div>
-      </Card>
-    )
-  }
-
-  if (status === 'late') {
-    return (
-      <Card className="bg-gradient-primary text-white border-0 shadow-primary-glow/30">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <div className="flex-1">
-            <p className="text-label-md uppercase tracking-widest text-white/70">
-              {formatPeriod(month, year)}
-            </p>
-            <p className="font-display font-black text-headline-md leading-tight mt-0.5">
-              Gecikmiş Ödeme
-            </p>
-            <p className="text-body-md text-white/80 mt-1">
-              Lütfen en kısa sürede akademiyle iletişime geçin.
+            <p className="text-body-md text-white/85 mt-1">
+              Vade tarihi: {formatDate(record.due_date)}
+              {record.amount !== null && (
+                <> · {formatCurrency(record.amount)}</>
+              )}
             </p>
             <a
               href={whatsappHref}
@@ -211,35 +263,50 @@ function CurrentMonthCard({ status, amount, month, year }: CurrentMonthCardProps
             </a>
           </div>
         </div>
-      </Card>
+      </PanelCard>
     )
   }
 
-  // unpaid or unmarked
+  // pending — gradient driven by urgency. Inline arbitrary value avoids any
+  // tailwind-merge collision with Card's default surface background.
+  const urgent = days <= 3
+  const gradientStyle: React.CSSProperties = {
+    backgroundImage: urgent
+      ? 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)'
+      : 'linear-gradient(135deg, #4c56af 0%, #6e78d4 100%)',
+  }
+
   return (
-    <Card>
+    <Card className="text-white" style={gradientStyle}>
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0">
-          <Clock className="w-6 h-6 text-yellow-700" />
+        <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+          <CalendarClock className="w-6 h-6 text-white" />
         </div>
         <div className="flex-1">
-          <p className="text-label-md uppercase tracking-widest text-on-surface/40">
-            {formatPeriod(month, year)}
+          <p className="text-label-md uppercase tracking-widest text-white/70">
+            {formatPeriodRange(record.period_start, record.period_end)}
           </p>
-          <p className="font-display font-bold text-headline-sm text-on-surface mt-0.5">
-            {status === 'unpaid' ? 'Henüz ödenmedi' : 'Durum işaretlenmemiş'}
+          <p className="font-display font-black text-headline-md leading-tight mt-0.5">
+            {days === 0
+              ? 'Bugün vade'
+              : days === 1
+                ? 'Yarın vade'
+                : `${days} gün kaldı`}
           </p>
-          <p className="text-body-md text-on-surface/60 mt-1">
-            Ödeme bilgisi için akademiyle iletişime geçebilirsiniz.
+          <p className="text-body-md text-white/85 mt-1">
+            Vade tarihi: {formatDate(record.due_date)}
+            {record.amount !== null && (
+              <> · {formatCurrency(record.amount)}</>
+            )}
           </p>
           <a
-            href={contactLinks.whatsapp}
+            href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-body-sm font-semibold"
+            className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-lg bg-white/15 text-white font-semibold hover:bg-white/25 transition-colors"
           >
             <MessageCircle className="w-4 h-4" />
-            WhatsApp
+            Bilgi Al
           </a>
         </div>
       </div>
@@ -247,7 +314,7 @@ function CurrentMonthCard({ status, amount, month, year }: CurrentMonthCardProps
   )
 }
 
-// ─── Summary tile ────────────────────────────────────────────────────────────
+// ─── Summary tile ───────────────────────────────────────────────────────────
 
 interface SummaryTileProps {
   label: string
@@ -272,50 +339,69 @@ function SummaryTile({ label, value, variant, icon: Icon }: SummaryTileProps) {
   )
 }
 
-// ─── Payment row ─────────────────────────────────────────────────────────────
+// ─── Payment row ────────────────────────────────────────────────────────────
 
 function PaymentRow({ record }: { record: PaymentRecord }) {
-  const config = {
+  const derived = derivePaymentStatus(record)
+
+  const config: Record<DerivedPaymentStatus, {
+    icon: React.ComponentType<{ className?: string }>
+    color: string
+    border: string
+    bg: string
+    badge: 'success' | 'error' | 'warning' | 'default'
+  }> = {
     paid: {
       icon: Check,
       color: 'text-green-600',
       border: 'border-green-500',
       bg: 'bg-green-50',
+      badge: 'success',
     },
-    late: {
+    overdue: {
       icon: AlertTriangle,
       color: 'text-primary',
       border: 'border-primary',
       bg: 'bg-red-50',
+      badge: 'error',
     },
-    unpaid: {
+    pending: {
       icon: Clock,
       color: 'text-yellow-700',
       border: 'border-yellow-500',
       bg: 'bg-yellow-50',
+      badge: 'warning',
     },
-  }[record.status]
+  }
+
+  const c = config[derived]
 
   return (
     <div
       className={cn(
         'flex items-center gap-3 rounded-lg p-3 border-l-4 shadow-ambient',
-        config.bg,
-        config.border,
+        c.bg,
+        c.border,
       )}
     >
-      <div className={cn('w-9 h-9 rounded-full bg-white flex items-center justify-center shrink-0', config.color)}>
-        <config.icon className="w-4 h-4" />
+      <div
+        className={cn(
+          'w-9 h-9 rounded-full bg-white flex items-center justify-center shrink-0',
+          c.color,
+        )}
+      >
+        <c.icon className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-display font-semibold text-body-md text-on-surface">
-          {TURKISH_MONTHS[record.period_month - 1]} {record.period_year}
+          {formatPeriodRange(record.period_start, record.period_end)}
         </p>
-        {record.status === 'paid' && record.paid_at && (
-          <p className="text-body-sm text-on-surface/50">
-            Ödeme: {formatDateLong(record.paid_at)}
-          </p>
-        )}
+        <p className="text-body-sm text-on-surface/55">
+          Vade: {formatDate(record.due_date)}
+          {derived === 'paid' && record.paid_at && (
+            <> · Ödeme: {formatDate(record.paid_at)}</>
+          )}
+        </p>
         {record.note && (
           <p className="text-body-sm text-on-surface/50 italic mt-0.5">{record.note}</p>
         )}
@@ -326,17 +412,7 @@ function PaymentRow({ record }: { record: PaymentRecord }) {
             {formatCurrency(record.amount)}
           </span>
         )}
-        <Badge
-          variant={
-            record.status === 'paid'
-              ? 'success'
-              : record.status === 'late'
-                ? 'error'
-                : 'warning'
-          }
-        >
-          {PAYMENT_STATUS_LABELS[record.status]}
-        </Badge>
+        <Badge variant={c.badge}>{DERIVED_PAYMENT_STATUS_LABELS[derived]}</Badge>
       </div>
     </div>
   )

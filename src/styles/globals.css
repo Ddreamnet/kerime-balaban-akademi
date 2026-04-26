@@ -81,6 +81,14 @@
     background-clip: text;
   }
 
+  /* Secondary gradient text — used for subtle accent on inverted surfaces */
+  .text-gradient-secondary {
+    background: linear-gradient(135deg, #4c56af 0%, #959efd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   /* Kinetic button scale */
   .btn-kinetic {
     @apply transition-all duration-200;
@@ -99,5 +107,139 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Refined sidebar/drawer scrollbar — visible but quiet */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(26, 28, 28, 0.15) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(26, 28, 28, 0.18);
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(26, 28, 28, 0.32);
+  }
+
+  /* Hero-style decorative band — same DNA as HeroSection's diagonal accent */
+  .panel-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 30%;
+    background: linear-gradient(135deg, #b7131a 0%, #db322f 100%);
+    opacity: 0.08;
+    transform: skewX(-6deg);
+    pointer-events: none;
+  }
+  .panel-band-2 {
+    width: 18%;
+    opacity: 0.12;
+  }
+
+  /* Soft glow blur — for "spotlight" backgrounds in dashboards */
+  .panel-glow {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* Subtle "speed line" — single horizontal red beam for motion accent */
+  .panel-beam {
+    position: absolute;
+    height: 2px;
+    background: linear-gradient(to right, transparent 0%, rgba(183, 19, 26, 0.3) 50%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Wine beam — deeper, more "editorial" horizontal accent for grounding */
+  .panel-wine-beam {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(to right, transparent 0%, rgba(59, 30, 30, 0.35) 50%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Vertical wine accent — used as a left-edge marker on PageHeader and
+   * other "anchor" surfaces. Keeps body content unaffected. */
+  .panel-wine-rail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #3B1E1E 0%, #5c2828 50%, #3B1E1E 100%);
+    border-radius: 9999px;
+    pointer-events: none;
+  }
+
+  /* Gradient text using the wine palette */
+  .text-gradient-wine {
+    background: linear-gradient(135deg, #3B1E1E 0%, #b7131a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@layer components {
+  /*
+   * Panel surface utilities — shared visual language for admin/coach/parent
+   * dashboard pages. Use sparingly; prefer Tailwind utilities for one-off cases.
+   */
+
+  /* Section heading row — small kicker over a bigger title with optional action */
+  .panel-kicker {
+    @apply text-label-md text-primary uppercase tracking-widest font-semibold;
+  }
+
+  /* Inverted kicker for dark hero cards */
+  .panel-kicker-inverted {
+    @apply text-label-md uppercase tracking-widest font-semibold text-white/70;
+  }
+
+  /*
+   * Subtle decorative wrapper applied to "spotlight" cards inside panels —
+   * same diagonal red accent the HeroSection uses, but quieter.
+   * Usage: <div class="relative panel-accent-bg overflow-hidden">…</div>
+   */
+  .panel-accent-bg {
+    background-image:
+      radial-gradient(120% 90% at 100% 0%, rgba(183, 19, 26, 0.10), rgba(183, 19, 26, 0) 60%),
+      linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+  }
+
+  /* Quiet horizontal divider with belt-shaped fade */
+  .panel-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(26, 28, 28, 0.08), transparent);
+  }
+
+  /*
+   * Panel mesh gradient — 5-stop organic atmosphere for the dashboard backdrop.
+   *
+   * Replaces the old single-color blob halos with overlapping radial
+   * gradients in primary / wine / secondary that blend into a "dōjō lighting"
+   * effect. Each stop has a different size and position so the result feels
+   * organic rather than geometric.
+   */
+  .panel-mesh-bg {
+    background-color: #f9f9f9;
+    background-image:
+      radial-gradient(ellipse 60% 45% at 14% 16%, rgba(59, 30, 30, 0.07), transparent 65%),
+      radial-gradient(ellipse 55% 45% at 88% 8%, rgba(183, 19, 26, 0.075), transparent 60%),
+      radial-gradient(ellipse 45% 35% at 32% 72%, rgba(183, 19, 26, 0.04), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 95% 60%, rgba(76, 86, 175, 0.045), transparent 65%),
+      radial-gradient(ellipse 55% 45% at 60% 100%, rgba(59, 30, 30, 0.04), transparent 70%);
   }
 }

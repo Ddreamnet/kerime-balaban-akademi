@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { AvatarUpload } from '@/components/ui/AvatarUpload'
+import { PageHeader } from '@/components/dashboard'
 import { useAuth } from '@/hooks/useAuth'
 import { updateOwnProfile } from '@/lib/auth'
 
@@ -64,13 +65,12 @@ export function ParentProfilePage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Veli Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Profil</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Kişisel bilgilerinizi güncelleyin.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Veli Paneli"
+        title="Profil"
+        description="Kişisel bilgilerinizi güncelleyin."
+      />
+
 
       <Card>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>

@@ -245,6 +245,9 @@ export interface PickedImage {
   format: string
 }
 
+/** Avatars render at 32–160px; 512 is comfortably above the largest retina target. */
+const AVATAR_MAX_DIMENSION = 512
+
 export const Camera = {
   /**
    * Request camera + photo library permission.
@@ -279,9 +282,13 @@ export const Camera = {
 
     try {
       const photo = await CapCamera.getPhoto({
-        quality: 85,
+        quality: 75,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
+        // Resize so a 4032x3024 phone capture doesn't ship as a multi-MB
+        // upload for what renders as a 32–160px avatar.
+        width: AVATAR_MAX_DIMENSION,
+        height: AVATAR_MAX_DIMENSION,
         source:
           source === 'camera'
             ? CameraSource.Camera
@@ -326,14 +333,9 @@ function pickImageViaInput(source: PickSource): Promise<PickedImage | null> {
       const file = input.files?.[0]
       if (!file) return finish(null)
 
-      const reader = new FileReader()
-      reader.onerror = () => reject(reader.error)
-      reader.onload = () => {
-        const dataUrl = String(reader.result ?? '')
-        const format = (file.type.split('/')[1] ?? 'jpeg').toLowerCase()
-        finish({ dataUrl, format })
-      }
-      reader.readAsDataURL(file)
+      resizeImageFile(file, AVATAR_MAX_DIMENSION, 0.75)
+        .then((picked) => finish(picked))
+        .catch((err) => reject(err))
     }
 
     // Some browsers don't fire 'change' on cancel — use a focus/timeout
@@ -350,6 +352,55 @@ function pickImageViaInput(source: PickSource): Promise<PickedImage | null> {
 
     document.body.appendChild(input)
     input.click()
+  })
+}
+
+/**
+ * Decode a picked image file, scale it so the longest side is at most
+ * `maxDim` px (preserving aspect ratio), and re-encode as JPEG.
+ * Mirrors the native Capacitor Camera resize so web uploads aren't multi-MB.
+ */
+async function resizeImageFile(
+  file: File,
+  maxDim: number,
+  quality: number,
+): Promise<PickedImage> {
+  const bitmap =
+    typeof createImageBitmap === 'function'
+      ? await createImageBitmap(file)
+      : await loadImageElement(file)
+
+  const { width: srcW, height: srcH } = bitmap
+  const scale = Math.min(1, maxDim / Math.max(srcW, srcH))
+  const dstW = Math.round(srcW * scale)
+  const dstH = Math.round(srcH * scale)
+
+  const canvas = document.createElement('canvas')
+  canvas.width = dstW
+  canvas.height = dstH
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas 2D context oluşturulamadı.')
+  ctx.drawImage(bitmap as CanvasImageSource, 0, 0, dstW, dstH)
+
+  if ('close' in bitmap && typeof bitmap.close === 'function') bitmap.close()
+
+  const dataUrl = canvas.toDataURL('image/jpeg', quality)
+  return { dataUrl, format: 'jpeg' }
+}
+
+function loadImageElement(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Görsel yüklenemedi.'))
+    }
+    img.src = url
   })
 }
 

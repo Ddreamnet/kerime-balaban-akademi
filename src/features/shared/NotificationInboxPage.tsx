@@ -9,9 +9,9 @@ import {
   ClipboardCheck,
   ExternalLink,
 } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import { useAuth } from '@/hooks/useAuth'
 import {
   listMyNotifications,
@@ -68,38 +68,32 @@ export function NotificationInboxPage({ role }: Props) {
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-label-md text-primary uppercase tracking-widest">{roleLabel}</p>
-          <h1 className="font-display text-headline-lg text-on-surface">Bildirimler</h1>
-          <p className="text-body-md text-on-surface/60 mt-1">
-            {unreadIds.length > 0 ? `${unreadIds.length} okunmamış bildirim` : 'Tümü okundu'}
-          </p>
-        </div>
-        {unreadIds.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={handleMarkAll}>
-            <Check className="w-4 h-4" />
-            Tümünü Okundu İşaretle
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        kicker={roleLabel}
+        title="Bildirimler"
+        description={
+          unreadIds.length > 0 ? `${unreadIds.length} okunmamış bildirim` : 'Tümü okundu'
+        }
+        action={
+          unreadIds.length > 0 ? (
+            <Button variant="ghost" size="sm" onClick={handleMarkAll}>
+              <Check className="w-4 h-4" />
+              Tümünü Okundu İşaretle
+            </Button>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
       ) : items.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-surface-low flex items-center justify-center">
-            <Bell className="w-7 h-7 text-on-surface/40" />
-          </div>
-          <p className="font-display font-bold text-title-lg text-on-surface">
-            Bildirim yok
-          </p>
-          <p className="text-body-md text-on-surface/60 max-w-sm">
-            Yönetici bir bildirim gönderdiğinde burada görünecek.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Bell}
+          title="Bildirim yok"
+          description="Yönetici bir bildirim gönderdiğinde burada görünecek."
+        />
       ) : (
         <div className="flex flex-col gap-2">
           {items.map((n) => (

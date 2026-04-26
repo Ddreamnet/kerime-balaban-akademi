@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
 import { EditProfileModal } from '@/components/admin/EditProfileModal'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import { listProfiles, deactivateUser, reactivateUser } from '@/lib/auth'
 import type { UserProfile } from '@/types/auth.types'
 import { formatDateLong } from '@/utils/format'
@@ -46,39 +47,39 @@ export function AdminCoachesPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Antrenörler</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          {coaches.length} onaylı antrenör hesabı
-        </p>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Antrenörler"
+        description={`${coaches.length} onaylı antrenör hesabı`}
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
       ) : coaches.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-surface-low flex items-center justify-center">
-            <UserCog className="w-7 h-7 text-on-surface/40" />
-          </div>
-          <p className="font-display font-bold text-title-lg text-on-surface">
-            Henüz antrenör yok
-          </p>
-          <p className="text-body-md text-on-surface/60">
-            Yeni antrenörler kayıt olup onaylandığında burada görünecek.
-          </p>
-        </Card>
+        <EmptyState
+          icon={UserCog}
+          title="Henüz antrenör yok"
+          description="Yeni antrenörler kayıt olup onaylandığında burada görünecek."
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {coaches.map((c) => (
             <Card key={c.id} className="flex flex-col gap-4 md:flex-row md:items-center">
               <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
-                  <span className="font-display font-bold text-secondary">
-                    {c.full_name?.[0]?.toUpperCase() ?? '?'}
-                  </span>
+                <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0 overflow-hidden">
+                  {c.avatar_url ? (
+                    <img
+                      src={c.avatar_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display font-bold text-secondary">
+                      {c.full_name?.[0]?.toUpperCase() ?? '?'}
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form'
-import { Lock } from 'lucide-react'
+import { Lock, UserCog } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -80,10 +80,34 @@ export function EditProfileModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`${ROLE_LABELS[profile.role]} bilgilerini düzenle`}
+      title="Profil bilgileri"
+      description={`${ROLE_LABELS[profile.role]} · ${profile.full_name || profile.email}`}
+      icon={UserCog}
       size="md"
+      decoratedHeader
+      footer={
+        <>
+          <Button type="button" variant="ghost" size="md" onClick={onClose}>
+            İptal
+          </Button>
+          <Button
+            type="submit"
+            form="edit-profile-form"
+            variant="primary"
+            size="md"
+            loading={isSubmitting}
+          >
+            Kaydet
+          </Button>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+      <form
+        id="edit-profile-form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+        noValidate
+      >
         <div className="flex justify-center pt-1">
           <AvatarUpload
             value={watch('avatar_url') || null}
@@ -132,27 +156,6 @@ export function EditProfileModal({
             {errors.root.message}
           </p>
         )}
-
-        <div className="flex gap-2 mt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="md"
-            onClick={onClose}
-            className="flex-1"
-          >
-            İptal
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            size="md"
-            loading={isSubmitting}
-            className="flex-1"
-          >
-            Kaydet
-          </Button>
-        </div>
       </form>
     </Modal>
   )

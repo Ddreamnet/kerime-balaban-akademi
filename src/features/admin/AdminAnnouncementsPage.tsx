@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Spinner } from '@/components/ui/Spinner'
+import { ImageUpload } from '@/components/ui/ImageUpload'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import {
   listAllAnnouncements,
   createAnnouncement,
@@ -62,38 +64,34 @@ export function AdminAnnouncementsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div>
-          <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-          <h1 className="font-display text-headline-lg text-on-surface">Duyurular</h1>
-          <p className="text-body-md text-on-surface/60 mt-1">
-            {items.length} duyuru ({items.filter((a) => a.is_published).length} yayında)
-          </p>
-        </div>
-        <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
-          <Plus className="w-4 h-4" />
-          Yeni Duyuru
-        </Button>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Duyurular"
+        description={`${items.length} duyuru (${items.filter((a) => a.is_published).length} yayında)`}
+        action={
+          <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
+            <Plus className="w-4 h-4" />
+            Yeni Duyuru
+          </Button>
+        }
+      />
 
-      {/* List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
       ) : items.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-surface-low flex items-center justify-center">
-            <Megaphone className="w-7 h-7 text-on-surface/40" />
-          </div>
-          <p className="font-display font-bold text-title-lg text-on-surface">
-            Henüz duyuru yok
-          </p>
-          <p className="text-body-md text-on-surface/60">
-            İlk duyurunuzu oluşturmak için üstteki butona tıklayın.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Megaphone}
+          title="Henüz duyuru yok"
+          description="İlk duyurunuzu oluşturmak için üstteki butona tıklayın."
+          action={
+            <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
+              <Plus className="w-4 h-4" />
+              Yeni Duyuru
+            </Button>
+          }
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((a) => (
@@ -213,6 +211,7 @@ function AnnouncementFormModal({ isOpen, existing, onClose, onSaved }: FormModal
   const category = watch('category')
   const isPinned = watch('is_pinned')
   const isPublished = watch('is_published')
+  const imageUrl = watch('image_url')
 
   const onSubmit = async (data: FormValues) => {
     const payload: AnnouncementInput = {
@@ -295,13 +294,14 @@ function AnnouncementFormModal({ isOpen, existing, onClose, onSaved }: FormModal
           </div>
         </div>
 
-        <Input
-          label="Görsel URL (opsiyonel)"
-          type="url"
-          placeholder="https://..."
-          error={errors.image_url?.message}
-          {...register('image_url')}
+        <ImageUpload
+          label="Görsel (opsiyonel)"
+          folder="announcements"
+          value={imageUrl || null}
+          hint="Kameradan çek veya galeriden seç. JPEG / PNG / WebP, en fazla 5 MB."
+          onChange={(url) => setValue('image_url', url ?? '', { shouldDirty: true })}
         />
+        <input type="hidden" {...register('image_url')} />
 
         {/* Toggles */}
         <div className="flex flex-col gap-2">

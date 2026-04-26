@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Private dashboards — don't index
+Disallow: /admin/
+Disallow: /antrenor/
+Disallow: /veli/
+Disallow: /giris
+Disallow: /kayit
+
+Sitemap: https://kerimebalabanakademi.com/sitemap.xml

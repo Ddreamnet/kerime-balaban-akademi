@@ -1,22 +1,38 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCheck, UserCog, Users, GraduationCap, ChevronRight } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import {
+  UserCheck,
+  UserCog,
+  Medal,
+  ChevronRight,
+  UserPlus,
+  Wallet,
+  Sparkles,
+} from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
+import { PageHeader, StatCard, PanelCard } from '@/components/dashboard'
 import { listProfiles } from '@/lib/auth'
 import { listAllChildren } from '@/lib/children'
+import { listUnassignedChildIds } from '@/lib/assignments'
+import { listChildrenWithoutBilling } from '@/lib/payments'
 import { useAuth } from '@/hooks/useAuth'
+
+interface UnconfiguredChild {
+  id: string
+  full_name: string
+}
 
 interface Stats {
   pending: number
   coaches: number
-  parents: number
   students: number
+  unassigned: number
+  unbilledChildren: UnconfiguredChild[]
 }
 
 /**
  * Admin overview — lightweight stat cards + shortcuts to key actions.
- * Pending approvals are highlighted for quick triage.
+ * Pending approvals and unbilled students surface as spotlight alerts.
  */
 export function AdminDashboard() {
   const { user } = useAuth()
@@ -24,135 +40,198 @@ export function AdminDashboard() {
 
   useEffect(() => {
     const load = async () => {
-      const [pendingList, coaches, parents, children] = await Promise.all([
+      const [pendingList, coaches, children, unassigned, unbilled] = await Promise.all([
         listProfiles({ approval_status: 'pending' }),
         listProfiles({ role: 'coach', approval_status: 'approved' }),
-        listProfiles({ role: 'parent', approval_status: 'approved' }),
         listAllChildren(),
+        listUnassignedChildIds(),
+        listChildrenWithoutBilling(),
       ])
       setStats({
         pending: pendingList.length,
         coaches: coaches.length,
-        parents: parents.length,
         students: children.length,
+        unassigned: unassigned.size,
+        unbilledChildren: unbilled.map((c) => ({ id: c.id, full_name: c.full_name })),
       })
     }
     void load()
   }, [])
 
-  return (
-    <div className="flex flex-col gap-8">
-      {/* Greeting */}
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">
-          Merhaba{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''} 👋
-        </h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Akademinin günlük durumuna hızlıca göz atın.
-        </p>
-      </div>
+  const firstName = user?.full_name?.split(' ')[0] ?? ''
 
-      {/* Stats grid */}
+  return (
+    <div className="flex flex-col gap-6 max-w-5xl">
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title={`Merhaba${firstName ? `, ${firstName}` : ''}`}
+        titleAccent={<span className="text-2xl">👋</span>}
+        description="Akademinin günlük durumuna hızlıca göz atın."
+        decorated
+      />
+
       {!stats ? (
         <div className="flex items-center justify-center py-16">
           <Spinner size="lg" />
         </div>
       ) : (
         <>
-          {/* Pending spotlight (only if > 0) */}
+          {/* Pending approvals — spotlight when present */}
           {stats.pending > 0 && (
-            <Link
+            <StatCard
+              icon={UserCheck}
+              label="Onay Bekleyenler"
+              value={stats.pending}
+              caption="İncelemeniz bekleniyor"
+              spotlight
               to="/admin/onaylar"
-              className="block group"
-            >
-              <Card className="bg-gradient-to-r from-primary to-primary-gradient text-white border-0 shadow-primary-glow/30 hover:shadow-primary-glow transition-shadow">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-                      <UserCheck className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-label-md uppercase tracking-widest text-white/70">
-                        Onay Bekleyenler
-                      </p>
-                      <p className="font-display font-black text-3xl leading-tight mt-0.5">
-                        {stats.pending}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-body-md font-semibold">
-                    <span className="hidden sm:inline">İncele</span>
-                    <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </div>
-              </Card>
-            </Link>
+            />
           )}
 
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <StatLink
-              to="/admin/antrenorler"
+          {/* Operational alerts (amber) */}
+          {(stats.unassigned > 0 || stats.unbilledChildren.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {stats.unassigned > 0 && (
+                <Link to="/admin/atamalar" className="block group">
+                  <AlertCard
+                    icon={UserPlus}
+                    label="Antrenörü Olmayan Öğrenci"
+                    value={stats.unassigned}
+                    actionLabel="Ata"
+                  />
+                </Link>
+              )}
+
+              {stats.unbilledChildren.length > 0 && (
+                <UnbilledAlertCard children={stats.unbilledChildren} />
+              )}
+            </div>
+          )}
+
+          {/* Primary stats — side by side on every breakpoint */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <StatCard
+              icon={Medal}
+              label="Öğrenciler"
+              value={stats.students}
+              tone="primary"
+              to="/admin/uyeler"
+            />
+            <StatCard
               icon={UserCog}
               label="Antrenörler"
               value={stats.coaches}
-              accent="secondary"
-            />
-            <StatLink
-              to="/admin/veliler"
-              icon={Users}
-              label="Veliler"
-              value={stats.parents}
-              accent="primary"
-            />
-            <StatLink
-              to="/admin/ogrenciler"
-              icon={GraduationCap}
-              label="Öğrenciler"
-              value={stats.students}
-              accent="neutral"
+              tone="secondary"
+              to="/admin/antrenorler"
             />
           </div>
+
+          {/* Empty-state hint when there's nothing to triage — wine "premium quiet" feel */}
+          {stats.pending === 0 &&
+            stats.unassigned === 0 &&
+            stats.unbilledChildren.length === 0 && (
+              <PanelCard
+                tone="elite"
+                decorated
+                className="flex items-center gap-3"
+              >
+                <div className="w-11 h-11 rounded-xl bg-white/12 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-display font-semibold text-white">
+                    Bekleyen iş yok
+                  </p>
+                  <p className="text-body-sm text-white/80">
+                    Tüm onay, atama ve ödeme planları güncel. Harika gidiyor!
+                  </p>
+                </div>
+              </PanelCard>
+            )}
         </>
       )}
     </div>
   )
 }
 
-interface StatLinkProps {
-  to: string
+// ─── Inline alert cards ─────────────────────────────────────────────────────
+
+interface AlertCardProps {
   icon: React.ComponentType<{ className?: string }>
   label: string
   value: number
-  accent: 'primary' | 'secondary' | 'neutral'
+  actionLabel: string
 }
 
-function StatLink({ to, icon: Icon, label, value, accent }: StatLinkProps) {
-  const accentClasses = {
-    primary: 'bg-primary-container text-primary',
-    secondary: 'bg-secondary-container text-secondary',
-    neutral: 'bg-surface-low text-on-surface/60',
-  }[accent]
-
+function AlertCard({ icon: Icon, label, value, actionLabel }: AlertCardProps) {
   return (
-    <Link to={to} className="group">
-      <Card hoverable className="h-full">
-        <div className="flex items-start justify-between gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${accentClasses}`}>
+    <PanelCard
+      padding="md"
+      className="bg-warning-tint border border-warning-container/60 hover:border-warning-container transition-colors"
+      hoverable
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-warning-container text-warning flex items-center justify-center shrink-0">
             <Icon className="w-5 h-5" />
           </div>
-          <ChevronRight className="w-4 h-4 text-on-surface/30 group-hover:text-on-surface/60 group-hover:translate-x-0.5 transition-all" />
+          <div>
+            <p className="text-label-md uppercase tracking-widest text-warning-on-container/80">
+              {label}
+            </p>
+            <p className="font-display font-black text-3xl leading-none mt-0.5 text-warning-on-container">
+              {value}
+            </p>
+          </div>
         </div>
-        <div className="mt-4">
-          <p className="text-label-md uppercase tracking-widest text-on-surface/50">
-            {label}
-          </p>
-          <p className="font-display font-black text-3xl text-on-surface mt-1">
-            {value}
-          </p>
+        <div className="flex items-center gap-1.5 text-body-md font-semibold text-warning-on-container">
+          <span className="hidden sm:inline">{actionLabel}</span>
+          <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
         </div>
-      </Card>
-    </Link>
+      </div>
+    </PanelCard>
+  )
+}
+
+function UnbilledAlertCard({ children }: { children: UnconfiguredChild[] }) {
+  return (
+    <PanelCard className="bg-warning-tint border border-warning-container/60">
+      <div className="flex items-start gap-3">
+        <div className="w-11 h-11 rounded-xl bg-warning-container text-warning flex items-center justify-center shrink-0">
+          <Wallet className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <p className="text-label-md uppercase tracking-widest text-warning-on-container/80">
+              Ödeme Planı Eksik
+            </p>
+            <span className="font-display font-black text-2xl leading-none text-warning-on-container">
+              {children.length}
+            </span>
+          </div>
+          <p className="text-body-sm text-warning-on-container/85 mt-1">
+            Aşağıdaki öğrenciler için aylık ödeme planı henüz girilmedi.
+          </p>
+          <ul className="flex flex-col gap-0.5 mt-2">
+            {children.slice(0, 4).map((child) => (
+              <li key={child.id}>
+                <Link
+                  to={`/admin/ogrenci/${child.id}`}
+                  className="inline-flex items-center gap-1 text-body-sm font-semibold text-warning-on-container hover:text-primary transition-colors"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                  {child.full_name}
+                </Link>
+              </li>
+            ))}
+            {children.length > 4 && (
+              <li className="text-body-sm text-warning-on-container/60 pl-4">
+                ve {children.length - 4} öğrenci daha…
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </PanelCard>
   )
 }

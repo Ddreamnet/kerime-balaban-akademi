@@ -1,3 +1,4 @@
+import { ScrollRestoration } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 
 interface AppShellProps {
@@ -29,6 +30,12 @@ export function AppShell({ children, className }: AppShellProps) {
       )}
     >
       {children}
+      {/*
+       * PUSH/REPLACE → scroll to top, POP (browser back, iOS swipe-back) →
+       * restore previous scroll position. Each top-level route mounts a single
+       * AppShell, so only one ScrollRestoration is active at a time.
+       */}
+      <ScrollRestoration />
     </div>
   )
 }

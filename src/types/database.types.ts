@@ -114,41 +114,105 @@ export type Database = {
           },
         ]
       }
+      child_coaches: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          child_id: string
+          coach_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          child_id: string
+          coach_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          child_id?: string
+          coach_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_coaches_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_coaches_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_coaches_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       children: {
         Row: {
           avatar_url: string | null
           belt_level: string | null
+          billing_start_date: string | null
           birthday: string | null
           class_group_id: string | null
+          coach_note: string | null
           created_at: string
           full_name: string
+          gender: string | null
           id: string
+          license_no: string | null
           notes: string | null
           parent_id: string
+          payment_due_day: number | null
+          start_date: string | null
+          tc_no: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           belt_level?: string | null
+          billing_start_date?: string | null
           birthday?: string | null
           class_group_id?: string | null
+          coach_note?: string | null
           created_at?: string
           full_name: string
+          gender?: string | null
           id?: string
+          license_no?: string | null
           notes?: string | null
           parent_id: string
+          payment_due_day?: number | null
+          start_date?: string | null
+          tc_no?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           belt_level?: string | null
+          billing_start_date?: string | null
           birthday?: string | null
           class_group_id?: string | null
+          coach_note?: string | null
           created_at?: string
           full_name?: string
+          gender?: string | null
           id?: string
+          license_no?: string | null
           notes?: string | null
           parent_id?: string
+          payment_due_day?: number | null
+          start_date?: string | null
+          tc_no?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -466,12 +530,16 @@ export type Database = {
           amount: number | null
           child_id: string
           created_at: string
+          due_date: string
           id: string
           note: string | null
           paid_at: string | null
           paid_by_id: string | null
+          period_end: string
           period_month: number
+          period_start: string
           period_year: number
+          reminder_sent_at: string | null
           status: string
           updated_at: string
         }
@@ -479,12 +547,16 @@ export type Database = {
           amount?: number | null
           child_id: string
           created_at?: string
+          due_date: string
           id?: string
           note?: string | null
           paid_at?: string | null
           paid_by_id?: string | null
+          period_end: string
           period_month: number
+          period_start: string
           period_year: number
+          reminder_sent_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -492,12 +564,16 @@ export type Database = {
           amount?: number | null
           child_id?: string
           created_at?: string
+          due_date?: string
           id?: string
           note?: string | null
           paid_at?: string | null
           paid_by_id?: string | null
+          period_end?: string
           period_month?: number
+          period_start?: string
           period_year?: number
+          reminder_sent_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -562,6 +638,107 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      performance_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          record_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          record_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          record_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_photos_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "performance_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_records: {
+        Row: {
+          child_id: string
+          created_at: string
+          exam_ready: boolean
+          forward_reach_cm: number | null
+          general_note: string | null
+          height_cm: number | null
+          id: string
+          jump_cm: number | null
+          recorded_at: string
+          recorded_by: string | null
+          split_cm: number | null
+          technique_notes: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          exam_ready?: boolean
+          forward_reach_cm?: number | null
+          general_note?: string | null
+          height_cm?: number | null
+          id?: string
+          jump_cm?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          split_cm?: number | null
+          technique_notes?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          exam_ready?: boolean
+          forward_reach_cm?: number | null
+          general_note?: string | null
+          height_cm?: number | null
+          id?: string
+          jump_cm?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          split_cm?: number | null
+          technique_notes?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_records_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

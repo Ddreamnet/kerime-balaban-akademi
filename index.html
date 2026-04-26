@@ -5,13 +5,192 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#b7131a" />
-    <meta name="description" content="Kerime Balaban Akademi — Bartın'da profesyonel taekwondo eğitimi. Çocuklar ve yetişkinler için grup dersleri." />
-    <title>Kerime Balaban Akademi</title>
+
+    <title>Kerime Balaban Taekwondo Akademisi — Bartın'da Çocuk & Yetişkin Dersleri</title>
+    <meta
+      name="description"
+      content="Bartın'da Kerime Balaban Taekwondo Akademisi. Çocuklar, gençler ve yetişkinler için profesyonel taekwondo eğitimi. 3. Dan siyah kuşak antrenör, haftada 3 gün dersler, ücretsiz deneme dersi."
+    />
+    <meta
+      name="keywords"
+      content="taekwondo, Kerime Balaban, Bartın taekwondo, taekwondo kursu, çocuk taekwondo, taekwondo akademi, Bartın spor, dövüş sanatları, taekwondo dersi"
+    />
+    <meta name="author" content="Kerime Balaban Akademi" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://kerimebalabanakademi.com/" />
+
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kerime Balaban Akademi" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:url" content="https://kerimebalabanakademi.com/" />
+    <meta property="og:title" content="Kerime Balaban Taekwondo Akademisi — Bartın" />
+    <meta
+      property="og:description"
+      content="Bartın'da çocuklar ve yetişkinler için profesyonel taekwondo eğitimi. Disiplin, özgüven, şampiyonluk. Ücretsiz deneme dersine kayıt olun."
+    />
+    <meta property="og:image" content="https://kerimebalabanakademi.com/images/KickTheAir.png" />
+    <meta property="og:image:width" content="940" />
+    <meta property="og:image:height" content="408" />
+    <meta property="og:image:alt" content="Kerime Balaban Taekwondo Akademisi" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kerime Balaban Taekwondo Akademisi — Bartın" />
+    <meta
+      name="twitter:description"
+      content="Bartın'da çocuklar ve yetişkinler için profesyonel taekwondo eğitimi. Ücretsiz deneme dersi."
+    />
+    <meta name="twitter:image" content="https://kerimebalabanakademi.com/images/KickTheAir.png" />
+
+    <!-- Structured data — LocalBusiness / SportsActivityLocation -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": ["SportsActivityLocation", "LocalBusiness"],
+        "name": "Kerime Balaban Taekwondo Akademisi",
+        "alternateName": "Kerime Balaban Akademi",
+        "description": "Bartın Merkez'de çocuklar, gençler ve yetişkinler için profesyonel taekwondo eğitimi sunan akademi. Disiplin, özgüven ve takım ruhuyla büyüyen nesiller yetiştiriyoruz.",
+        "url": "https://kerimebalabanakademi.com/",
+        "image": "https://kerimebalabanakademi.com/images/KickTheAir.png",
+        "logo": "https://kerimebalabanakademi.com/images/logo-renkli.png",
+        "foundingDate": "2018",
+        "sport": "Taekwondo",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Bartın Merkez",
+          "addressRegion": "Bartın",
+          "addressCountry": "TR"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Bartın"
+        },
+        "priceRange": "$$",
+        "founder": {
+          "@type": "Person",
+          "name": "Kerime Balaban",
+          "jobTitle": "Baş Antrenör · 3. Dan Siyah Kuşak"
+        },
+        "sameAs": [
+          "https://instagram.com/kerimebalabanakademi"
+        ]
+      }
+    </script>
+    <link rel="preload" as="video" href="/loading.webm" type="video/webm" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap" rel="stylesheet" />
+    <!--
+      Fonts load async via the media="print" → onload="this.media='all'" trick.
+      This keeps the Google Fonts CSS out of the render-blocking critical path
+      so the splash video can grab full network + main-thread priority first.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap"
+      />
+    </noscript>
+    <style>
+      /* Initial loading splash — shown before JS parses; hidden from main.tsx after React mounts. */
+      #app-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background-color: #3B1E1E;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 1;
+        transition:
+          opacity 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+          visibility 0s linear 0.6s;
+      }
+      #app-splash.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      #app-splash video,
+      #app-splash img {
+        width: 220px;
+        max-width: 75vw;
+        height: auto;
+        user-select: none;
+        -webkit-user-drag: none;
+        transform: scale(1);
+        filter: blur(0);
+        transition:
+          transform 0.75s cubic-bezier(0.65, 0, 0.35, 1),
+          filter 0.6s ease-out,
+          opacity 0.5s ease-out;
+      }
+      #app-splash.is-hidden video,
+      #app-splash.is-hidden img {
+        transform: scale(1.2);
+        filter: blur(6px);
+        opacity: 0;
+      }
+      @media (min-width: 640px) {
+        #app-splash video,
+        #app-splash img { width: 320px; }
+      }
+      @media (min-width: 1024px) {
+        #app-splash video,
+        #app-splash img { width: 420px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #app-splash { transition: opacity 0.3s ease-out, visibility 0s linear 0.3s; }
+        #app-splash video, #app-splash img { transition: opacity 0.3s ease-out; }
+        #app-splash.is-hidden video, #app-splash.is-hidden img { transform: none; filter: none; }
+      }
+
+      /* Pause hero animations until the splash has faded. main.tsx removes the
+         splash-active class on <body> once the splash exit animation starts. */
+      body.splash-active .animate-fade-in-up,
+      body.splash-active .animate-hero-push-1,
+      body.splash-active .animate-hero-push-2,
+      body.splash-active .animate-hero-push-3,
+      body.splash-active .animate-kick-enter,
+      body.splash-active .animate-shockwave-1,
+      body.splash-active .animate-shockwave-2,
+      body.splash-active .animate-shockwave-3,
+      body.splash-active .animate-speed-line-1,
+      body.splash-active .animate-speed-line-2,
+      body.splash-active .animate-speed-line-3 {
+        animation-play-state: paused !important;
+      }
+    </style>
   </head>
-  <body>
+  <body class="splash-active">
+    <div id="app-splash" aria-hidden="true">
+      <video
+        id="app-splash-video"
+        src="/loading.webm"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+      ></video>
+    </div>
+    <script>
+      window.__splashStart = Date.now();
+      (function () {
+        var v = document.getElementById('app-splash-video');
+        if (!v) return;
+        // Explicit play() in case the autoplay attribute was ignored (some
+        // browsers gate autoplay until interaction even when muted).
+        var p = v.play();
+        if (p && typeof p.catch === 'function') p.catch(function () {});
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

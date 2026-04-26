@@ -33,6 +33,7 @@ import {
 } from '@/lib/exams'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
 import { useAuth } from '@/hooks/useAuth'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import { formatDateLong } from '@/utils/format'
 import { cn } from '@/utils/cn'
 
@@ -73,36 +74,34 @@ export function AdminExamsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div>
-          <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-          <h1 className="font-display text-headline-lg text-on-surface">Sınavlar</h1>
-          <p className="text-body-md text-on-surface/60 mt-1">
-            {exams.length} sınav · kuşak terfi ve müsabaka hazırlık
-          </p>
-        </div>
-        <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
-          <Plus className="w-4 h-4" />
-          Yeni Sınav
-        </Button>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Sınavlar"
+        description={`${exams.length} sınav · kuşak terfi ve müsabaka hazırlık`}
+        action={
+          <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
+            <Plus className="w-4 h-4" />
+            Yeni Sınav
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
       ) : exams.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-surface-low flex items-center justify-center">
-            <Award className="w-7 h-7 text-on-surface/40" />
-          </div>
-          <p className="font-display font-bold text-title-lg text-on-surface">
-            Henüz sınav yok
-          </p>
-          <p className="text-body-md text-on-surface/60">
-            İlk sınavınızı planlamak için üstteki butonu kullanın.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Award}
+          title="Henüz sınav yok"
+          description="İlk sınavınızı planlamak için üstteki butonu kullanın."
+          action={
+            <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
+              <Plus className="w-4 h-4" />
+              Yeni Sınav
+            </Button>
+          }
+        />
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {exams.map((e) => (

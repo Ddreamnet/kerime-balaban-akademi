@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { Modal } from '@/components/ui/Modal'
+import { PageHeader } from '@/components/dashboard'
 import { useAuth } from '@/hooks/useAuth'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
 import { listActiveClasses } from '@/lib/classes'
@@ -148,20 +149,18 @@ export function CoachNotesPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <p className="text-label-md text-primary uppercase tracking-widest">Antrenor Paneli</p>
-          <h1 className="font-display text-headline-lg text-on-surface">Notlar</h1>
-          <p className="text-body-md text-on-surface/60 mt-1">
-            Ogrenciler hakkında notlar, performans degerlendirmeleri ve gozlemler.
-          </p>
-        </div>
-        <Button variant="primary" size="md" onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4" />
-          Yeni Not
-        </Button>
-      </div>
+      <PageHeader
+        kicker="Antrenör Paneli"
+        title="Notlar"
+        description="Öğrenciler hakkında notlar, performans değerlendirmeleri ve gözlemler."
+        action={
+          <Button variant="primary" size="md" onClick={() => setShowForm(true)}>
+            <Plus className="w-4 h-4" />
+            Yeni Not
+          </Button>
+        }
+      />
+
 
       {/* Filters */}
       <div className="flex flex-col gap-3">

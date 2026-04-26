@@ -7,6 +7,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { SEO } from '@/components/SEO'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 interface ContactFormValues {
@@ -37,6 +38,11 @@ export function ContactPage() {
 
   return (
     <>
+      <SEO
+        title="İletişim — Kerime Balaban Taekwondo Akademisi Bartın"
+        description="Kerime Balaban Akademi iletişim: telefon, WhatsApp, adres ve çalışma saatleri. Ücretsiz deneme dersi için bize ulaşın. Bartın Merkez."
+        path="/iletisim"
+      />
       <PageHero
         label="İletişim"
         headline={settings.contact_hero_headline}

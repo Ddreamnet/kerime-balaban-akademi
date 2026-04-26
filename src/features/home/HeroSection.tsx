@@ -128,7 +128,7 @@ export function HeroSection() {
 
             {/* The kicker */}
             <img
-              src="/images/KickTheAir.png"
+              src="/images/KickTheAir.webp"
               alt="Taekwondo tekme"
               className="relative z-10 w-full max-w-[520px] h-auto object-contain drop-shadow-[0_0_60px_rgba(183,19,26,0.3)] animate-kick-enter select-none"
               draggable={false}
@@ -141,7 +141,7 @@ export function HeroSection() {
           {/* ── Mobile: Kick image (simplified) ── */}
           <div className="flex lg:hidden justify-center relative -mt-4">
             <img
-              src="/images/KickTheAir.png"
+              src="/images/KickTheAir.webp"
               alt="Taekwondo tekme"
               className="w-72 h-auto object-contain drop-shadow-[0_0_40px_rgba(183,19,26,0.25)] animate-kick-enter select-none"
               draggable={false}

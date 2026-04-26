@@ -6,6 +6,8 @@
 import { supabase } from './supabase'
 import type { BeltLevel } from '@/types/content.types'
 
+export type Gender = 'erkek' | 'kiz'
+
 export interface Child {
   id: string
   parent_id: string
@@ -15,6 +17,15 @@ export interface Child {
   belt_level: BeltLevel | null
   avatar_url: string | null
   notes: string | null
+  gender: Gender | null
+  tc_no: string | null
+  license_no: string | null
+  start_date: string | null
+  coach_note: string | null
+  /** Anchor date for the per-child billing cycle (ISO YYYY-MM-DD). */
+  billing_start_date: string | null
+  /** Day-of-month payment is due (1-31). Defaults to billing_start_date.day. */
+  payment_due_day: number | null
   created_at: string
   updated_at: string
 }
@@ -26,6 +37,11 @@ export interface ChildInput {
   belt_level?: BeltLevel | null
   avatar_url?: string | null
   notes?: string | null
+  gender?: Gender | null
+  tc_no?: string | null
+  license_no?: string | null
+  start_date?: string | null
+  coach_note?: string | null
 }
 
 function mapChild(row: {
@@ -37,6 +53,13 @@ function mapChild(row: {
   belt_level: string | null
   avatar_url: string | null
   notes: string | null
+  gender: string | null
+  tc_no: string | null
+  license_no: string | null
+  start_date: string | null
+  coach_note: string | null
+  billing_start_date?: string | null
+  payment_due_day?: number | null
   created_at: string
   updated_at: string
 }): Child {
@@ -49,6 +72,13 @@ function mapChild(row: {
     belt_level: (row.belt_level as BeltLevel | null) ?? null,
     avatar_url: row.avatar_url,
     notes: row.notes,
+    gender: (row.gender as Gender | null) ?? null,
+    tc_no: row.tc_no,
+    license_no: row.license_no,
+    start_date: row.start_date,
+    coach_note: row.coach_note,
+    billing_start_date: row.billing_start_date ?? null,
+    payment_due_day: row.payment_due_day ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   }
@@ -87,6 +117,11 @@ export async function createChild(
       belt_level: input.belt_level ?? null,
       avatar_url: input.avatar_url ?? null,
       notes: input.notes ?? null,
+      gender: input.gender ?? null,
+      tc_no: input.tc_no ?? null,
+      license_no: input.license_no ?? null,
+      start_date: input.start_date ?? null,
+      coach_note: input.coach_note ?? null,
     })
     .select('*')
     .single()
@@ -116,6 +151,8 @@ export interface ChildWithParent extends Child {
   parent_email: string
   parent_name: string
   parent_phone: string | null
+  parent_avatar_url: string | null
+  parent_is_active: boolean
 }
 
 export async function listAllChildren(): Promise<ChildWithParent[]> {
@@ -130,12 +167,21 @@ export async function listAllChildren(): Promise<ChildWithParent[]> {
       belt_level,
       avatar_url,
       notes,
+      gender,
+      tc_no,
+      license_no,
+      start_date,
+      coach_note,
+      billing_start_date,
+      payment_due_day,
       created_at,
       updated_at,
       profiles!children_parent_id_fkey (
         email,
         full_name,
-        phone
+        phone,
+        avatar_url,
+        is_active
       )
     `)
     .order('created_at', { ascending: false })
@@ -143,7 +189,13 @@ export async function listAllChildren(): Promise<ChildWithParent[]> {
   if (error || !data) return []
 
   return data.map((row) => {
-    type ProfileJoin = { email: string; full_name: string; phone: string | null }
+    type ProfileJoin = {
+      email: string
+      full_name: string
+      phone: string | null
+      avatar_url: string | null
+      is_active: boolean
+    }
     const parent = (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles) as
       | ProfileJoin
       | null
@@ -152,6 +204,8 @@ export async function listAllChildren(): Promise<ChildWithParent[]> {
       parent_email: parent?.email ?? '',
       parent_name: parent?.full_name ?? '',
       parent_phone: parent?.phone ?? null,
+      parent_avatar_url: parent?.avatar_url ?? null,
+      parent_is_active: parent?.is_active ?? true,
     }
   })
 }

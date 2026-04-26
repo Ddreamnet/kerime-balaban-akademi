@@ -27,6 +27,7 @@ import {
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
+import { PageHeader } from '@/components/dashboard'
 import { getSiteContent, updateSiteContent, type SiteContent } from '@/lib/siteContent'
 import { useSiteSettings, resolveSiteContent } from '@/hooks/useSiteSettings'
 
@@ -515,13 +516,12 @@ export function AdminSiteContentPage() {
 
   return (
     <div className="flex flex-col gap-8 max-w-3xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Site İçeriği</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Anasayfa, hakkımızda, iletişim, dersler, duyurular ve ürünler sayfalarındaki tüm metinleri buradan düzenleyin. Değişiklikler kaydettiğiniz anda siteye yansır.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Site İçeriği"
+        description="Anasayfa, hakkımızda, iletişim, dersler, duyurular ve ürünler sayfalarındaki tüm metinleri buradan düzenleyin. Değişiklikler kaydettiğiniz anda siteye yansır."
+      />
+
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-10" noValidate>
 

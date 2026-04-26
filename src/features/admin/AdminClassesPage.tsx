@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Spinner } from '@/components/ui/Spinner'
+import { PageHeader, EmptyState } from '@/components/dashboard'
 import {
   listAllClasses,
   createClass,
@@ -30,7 +31,7 @@ interface FormValues {
   is_active: boolean
 }
 
-const BELT_LEVELS: BeltLevel[] = ['baslangic', 'orta', 'ileri']
+const BELT_LEVELS: BeltLevel[] = ['beyaz', 'sari', 'yesil', 'mavi', 'kirmizi', 'siyah']
 const TRAINING_DAYS: TrainingDay[] = ['pazartesi', 'carsamba', 'cuma']
 
 export function AdminClassesPage() {
@@ -61,36 +62,34 @@ export function AdminClassesPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div>
-          <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-          <h1 className="font-display text-headline-lg text-on-surface">Dersler</h1>
-          <p className="text-body-md text-on-surface/60 mt-1">
-            {items.length} ders ({items.filter((c) => c.is_active).length} aktif)
-          </p>
-        </div>
-        <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
-          <Plus className="w-4 h-4" />
-          Yeni Ders
-        </Button>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Dersler"
+        description={`${items.length} ders (${items.filter((c) => c.is_active).length} aktif)`}
+        action={
+          <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
+            <Plus className="w-4 h-4" />
+            Yeni Ders
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
       ) : items.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-surface-low flex items-center justify-center">
-            <CalendarDays className="w-7 h-7 text-on-surface/40" />
-          </div>
-          <p className="font-display font-bold text-title-lg text-on-surface">
-            Henüz ders yok
-          </p>
-          <p className="text-body-md text-on-surface/60">
-            İlk dersi eklemek için üstteki butonu kullanın.
-          </p>
-        </Card>
+        <EmptyState
+          icon={CalendarDays}
+          title="Henüz ders yok"
+          description="İlk dersi eklemek için üstteki butonu kullanın."
+          action={
+            <Button variant="primary" size="md" onClick={() => setIsCreating(true)}>
+              <Plus className="w-4 h-4" />
+              Yeni Ders
+            </Button>
+          }
+        />
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {items.map((c) => (
@@ -226,7 +225,7 @@ function ClassFormModal({ isOpen, existing, onClose, onSaved }: FormModalProps) 
 
   const onSubmit = async (data: FormValues) => {
     if (selectedLevels.length === 0) {
-      setError('root', { message: 'En az bir kuşak seviyesi seçin.' })
+      setError('root', { message: 'En az bir kuşak seçin.' })
       return
     }
     if (selectedDays.length === 0) {
@@ -326,7 +325,7 @@ function ClassFormModal({ isOpen, existing, onClose, onSaved }: FormModalProps) 
 
         {/* Belt levels */}
         <div className="flex flex-col gap-2">
-          <span className="text-label-md text-on-surface/80 font-medium">Kuşak Seviyeleri</span>
+          <span className="text-label-md text-on-surface/80 font-medium">Kuşaklar</span>
           <div className="flex flex-wrap gap-2">
             {BELT_LEVELS.map((lvl) => (
               <button

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { RouterProvider } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
 import { Capacitor } from '@capacitor/core'
 import { router } from './router'
 import { supabase } from '@/lib/supabase'
@@ -17,6 +18,27 @@ import { registerPushForUser, registerPushListeners } from '@/lib/notifications'
  * page. Runs once per process; later navigations (manual logo tap, etc.)
  * are unaffected.
  */
+/**
+ * Shallow equality on the fields we render, so a refetched profile that's
+ * identical to what's already in the store doesn't trigger a Zustand update
+ * (and the form-reset cascade that follows from it).
+ */
+function profilesEqual(a: UserProfile | null, b: UserProfile | null): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  return (
+    a.id === b.id &&
+    a.email === b.email &&
+    a.full_name === b.full_name &&
+    a.phone === b.phone &&
+    a.role === b.role &&
+    a.approval_status === b.approval_status &&
+    a.is_active === b.is_active &&
+    a.avatar_url === b.avatar_url &&
+    a.updated_at === b.updated_at
+  )
+}
+
 function maybeRedirectToPanelOnColdStart(profile: UserProfile): void {
   if (!Capacitor.isNativePlatform()) return
 
@@ -68,7 +90,16 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
     const resolveSession = async (userId: string, isInitial: boolean) => {
       const profile = await fetchProfile(userId)
       if (profile && isFullyActive(profile)) {
-        setUser(profile)
+        // Supabase v2 fires redundant SIGNED_IN events on tab visibility
+        // changes (e.g. when a file picker opens and closes). Skipping the
+        // setUser call when nothing actually changed prevents any open form
+        // bound to `user` via react-hook-form `values` from being reset
+        // mid-edit — which would, for example, wipe a freshly-uploaded
+        // avatar URL before the user clicks Save.
+        const current = useAuthStore.getState().user
+        if (!profilesEqual(current, profile)) {
+          setUser(profile)
+        }
         // Register this device's push token in the background.
         void registerPushForUser(profile.id).catch(() => {
           // Silent — push is optional; never block login on it.
@@ -115,10 +146,12 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
 
 export function Providers() {
   return (
-    <SiteSettingsProvider>
-      <AuthBootstrap>
-        <RouterProvider router={router} />
-      </AuthBootstrap>
-    </SiteSettingsProvider>
+    <HelmetProvider>
+      <SiteSettingsProvider>
+        <AuthBootstrap>
+          <RouterProvider router={router} />
+        </AuthBootstrap>
+      </SiteSettingsProvider>
+    </HelmetProvider>
   )
 }

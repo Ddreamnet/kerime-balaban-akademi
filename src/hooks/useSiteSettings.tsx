@@ -68,7 +68,7 @@ const DEFAULT_CLASSES_SCHEDULE: ScheduleSlot[] = [
 const DEFAULT_CLASS_FAQS: FaqItem[] = [
   {
     q: 'Başlamak için hangi ekipman gereklidir?',
-    a: 'İlk derse spor kıyafetiyle gelebilirsiniz. Kayıt sonrası doboku ve temel koruyucu ekipman hakkında bilgi verilir.',
+    a: 'İlk derse spor kıyafetiyle gelebilirsiniz. Kayıt sonrası dobok ve temel koruyucu ekipman hakkında bilgi verilir.',
   },
   {
     q: 'Kaç yaşından itibaren başlayabilir?',

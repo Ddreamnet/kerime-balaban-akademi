@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
+import { PageHeader } from '@/components/dashboard'
 import {
   sendNotification,
   listAllNotifications,
@@ -170,13 +171,12 @@ export function AdminNotificationsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Yönetici Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Bildirimler</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Tüm kullanıcılara, belirli bir role veya seçilen kişilere bildirim gönderin.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Yönetici Paneli"
+        title="Bildirimler"
+        description="Tüm kullanıcılara, belirli bir role veya seçilen kişilere bildirim gönderin."
+      />
+
 
       {/* Composer */}
       <Card>

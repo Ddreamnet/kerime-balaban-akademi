@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.daily-birthday-notifications]
 verify_jwt = false
+
+[functions.payment-reminders]
+verify_jwt = false

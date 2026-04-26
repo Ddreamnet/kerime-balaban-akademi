@@ -17,12 +17,22 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
+import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { supabase } from '@/lib/supabase'
 import { updateChild, type Child } from '@/lib/children'
 import { listActiveClasses } from '@/lib/classes'
+import {
+  deleteRecord,
+  listRecordsForChild,
+  type PerformanceRecord,
+} from '@/lib/performance'
+import { useAuth } from '@/hooks/useAuth'
+import { PageHeader } from '@/components/dashboard'
 import { beltLevelLabels } from '@/data/classes'
 import type { ClassGroup } from '@/types/content.types'
 import { formatDateLong } from '@/utils/format'
+import { PerformanceTimeline } from '@/features/performance/PerformanceTimeline'
+import { PerformanceRecordModal } from '@/features/performance/PerformanceRecordModal'
 
 interface FormValues {
   full_name: string
@@ -44,6 +54,7 @@ interface ParentInfo {
 export function CoachStudentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [child, setChild] = useState<Child | null>(null)
   const [parent, setParent] = useState<ParentInfo | null>(null)
   const [classes, setClasses] = useState<ClassGroup[]>([])
@@ -51,13 +62,22 @@ export function CoachStudentDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [notFound, setNotFound] = useState(false)
 
+  const [records, setRecords] = useState<PerformanceRecord[]>([])
+  const [recordsLoading, setRecordsLoading] = useState(false)
+  const [editingRecord, setEditingRecord] = useState<PerformanceRecord | null>(null)
+  const [isCreatingRecord, setIsCreatingRecord] = useState(false)
+
   const {
     register,
     handleSubmit,
     reset,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>()
+
+  const currentAvatar = watch('avatar_url')
 
   useEffect(() => {
     if (!id) return
@@ -105,15 +125,48 @@ export function CoachStudentDetailPage() {
         belt_level: data.belt_level as Child['belt_level'],
         avatar_url: data.avatar_url,
         notes: data.notes,
+        gender: (data.gender as Child['gender']) ?? null,
+        tc_no: data.tc_no ?? null,
+        license_no: data.license_no ?? null,
+        start_date: data.start_date ?? null,
+        coach_note: data.coach_note ?? null,
+        billing_start_date: data.billing_start_date ?? null,
+        payment_due_day: data.payment_due_day ?? null,
         created_at: data.created_at,
         updated_at: data.updated_at,
       }
       setChild(c)
       reset({ full_name: c.full_name, avatar_url: c.avatar_url ?? '' })
       setIsLoading(false)
+
+      setRecordsLoading(true)
+      const recs = await listRecordsForChild(c.id)
+      setRecords(recs)
+      setRecordsLoading(false)
     }
     void load()
   }, [id, reset])
+
+  const handleDeleteRecord = async (recordId: string) => {
+    const { error } = await deleteRecord(recordId)
+    if (!error) {
+      setRecords((prev) => prev.filter((r) => r.id !== recordId))
+    }
+  }
+
+  const handleRecordSaved = (saved: PerformanceRecord) => {
+    setRecords((prev) => {
+      const without = prev.filter((r) => r.id !== saved.id)
+      return [saved, ...without].sort((a, b) => {
+        if (a.recorded_at !== b.recorded_at) {
+          return a.recorded_at < b.recorded_at ? 1 : -1
+        }
+        return a.created_at < b.created_at ? 1 : -1
+      })
+    })
+    setEditingRecord(null)
+    setIsCreatingRecord(false)
+  }
 
   if (isLoading) {
     return (
@@ -170,11 +223,7 @@ export function CoachStudentDetailPage() {
         Öğrenciler
       </button>
 
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Antrenör Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Öğrenci Detayı</h1>
-      </div>
+      <PageHeader kicker="Antrenör Paneli" title="Öğrenci Detayı" />
 
       {/* Main identity card */}
       {isEditing ? (
@@ -200,14 +249,25 @@ export function CoachStudentDetailPage() {
               })}
             />
 
-            <Input
-              label="Profil Fotoğrafı (URL)"
-              type="url"
-              placeholder="https://..."
-              hint="Profil fotoğrafının tam URL'si"
-              error={errors.avatar_url?.message}
-              {...register('avatar_url')}
-            />
+            <div className="flex flex-col gap-2">
+              <span className="text-label-md text-on-surface/80 font-medium">
+                Profil Fotoğrafı
+              </span>
+              <div className="flex items-center gap-3">
+                <AvatarUpload
+                  value={currentAvatar || null}
+                  ownerId={child.id}
+                  fallbackLabel={child.full_name}
+                  onChange={(url) =>
+                    setValue('avatar_url', url ?? '', { shouldDirty: true })
+                  }
+                />
+                <p className="text-body-sm text-on-surface/60">
+                  Fotoğrafa dokunarak kameradan çek veya galeriden seç.
+                </p>
+              </div>
+              <input type="hidden" {...register('avatar_url')} />
+            </div>
 
             {/* Permission note */}
             <div className="flex items-start gap-2.5 bg-surface-low rounded-md px-3 py-2.5">
@@ -341,6 +401,27 @@ export function CoachStudentDetailPage() {
           </div>
         </Card>
       )}
+
+      {/* Performance */}
+      <PerformanceTimeline
+        records={records}
+        isLoading={recordsLoading}
+        onAdd={() => setIsCreatingRecord(true)}
+        onEdit={(r) => setEditingRecord(r)}
+        onDelete={handleDeleteRecord}
+      />
+
+      <PerformanceRecordModal
+        childId={child.id}
+        recordedBy={user?.id ?? null}
+        existing={editingRecord}
+        isOpen={isCreatingRecord || editingRecord !== null}
+        onClose={() => {
+          setIsCreatingRecord(false)
+          setEditingRecord(null)
+        }}
+        onSaved={handleRecordSaved}
+      />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import { Card } from '@/components/ui/Card'
 import type { Announcement } from '@/types/content.types'
@@ -14,6 +15,7 @@ export function AnnouncementCard({
   announcement,
   variant = 'default',
 }: AnnouncementCardProps) {
+  const navigate = useNavigate()
   const colorClass =
     announcementCategoryColors[announcement.category] ??
     'bg-surface-low text-on-surface'
@@ -21,11 +23,12 @@ export function AnnouncementCard({
   return (
     <Card
       className={cn(
-        'flex flex-col gap-3',
+        'flex flex-col gap-3 h-full',
         announcement.is_pinned && 'ring-1 ring-primary/20',
         variant === 'featured' && 'p-6 md:p-8'
       )}
       hoverable
+      onClick={() => navigate(`/duyurular/${announcement.id}`)}
     >
       {/* Top: category + date */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -61,14 +64,11 @@ export function AnnouncementCard({
         {announcement.excerpt}
       </p>
 
-      {/* Read more */}
-      <button
-        className="flex items-center gap-1 text-body-sm font-semibold text-primary hover:text-primary-dark transition-colors mt-auto pt-1 w-fit"
-        onClick={() => {/* Future: navigate to announcement detail page */}}
-      >
+      {/* Read more affordance — whole card is clickable */}
+      <span className="flex items-center gap-1 text-body-sm font-semibold text-primary mt-auto pt-1">
         Devamını oku
         <ChevronRight className="w-4 h-4" />
-      </button>
+      </span>
     </Card>
   )
 }

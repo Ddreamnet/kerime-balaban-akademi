@@ -1,15 +1,30 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { ProductCard } from '@/features/products/ProductCard'
-import { products } from '@/data/products'
+import { listAvailableProducts } from '@/lib/products'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
+import type { Product } from '@/types/content.types'
 
 export function ProductsPreviewSection() {
-  const featured = products.filter((p) => p.is_featured && p.is_available).slice(0, 3)
+  const [featured, setFeatured] = useState<Product[]>([])
   const settings = useSiteSettings()
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const list = await listAvailableProducts()
+      if (!cancelled) {
+        setFeatured(list.filter((p) => p.is_featured).slice(0, 3))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <Section bg="card">

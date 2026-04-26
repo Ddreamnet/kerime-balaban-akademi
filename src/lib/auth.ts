@@ -251,6 +251,31 @@ export async function listProfiles(filters?: {
   return data.map(mapProfile)
 }
 
+/**
+ * Change the current user's password.
+ * Requires the current password as a re-verification step — Supabase's
+ * updateUser({ password }) does not check the old password by itself, so we
+ * sign in once with it first to make sure the caller actually knows it.
+ */
+export async function updatePassword(
+  email: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ error: string | null }> {
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email,
+    password: currentPassword,
+  })
+  if (verifyError) {
+    return { error: 'Mevcut şifre hatalı.' }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) return { error: mapAuthError(error.message) }
+
+  return { error: null }
+}
+
 // Re-export helper for component consumers
 export { isFullyActive }
 

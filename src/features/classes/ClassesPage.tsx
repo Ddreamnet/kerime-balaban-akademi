@@ -7,6 +7,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Button } from '@/components/ui/Button'
 import { ClassGroupCard } from './ClassGroupCard'
 import { classGroups, trainingDayLabels } from '@/data/classes'
+import { SEO } from '@/components/SEO'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { cn } from '@/utils/cn'
 
@@ -23,6 +24,11 @@ export function ClassesPage() {
 
   return (
     <>
+      <SEO
+        title="Taekwondo Dersleri — Kerime Balaban Akademi Bartın"
+        description="Bartın'da çocuk, genç ve yetişkinler için taekwondo dersleri. Başlangıç, orta ve ileri seviye gruplar. Haftada 3 gün profesyonel antrenman. Ücretsiz deneme dersi."
+        path="/dersler"
+      />
       <PageHero
         label={settings.classes_hero_label}
         headline={settings.classes_hero_headline}

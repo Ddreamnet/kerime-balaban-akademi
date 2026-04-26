@@ -34,14 +34,21 @@ export function Header() {
           'pt-safe pl-safe pr-safe',
           'transition-all duration-500 ease-out',
           scrolled
-            ? 'glass shadow-ambient-md py-2.5'
+            ? 'glass shadow-ambient-md pb-2.5 sm:py-2.5'
             : solid
-              ? 'bg-surface-card shadow-ambient py-3'
-              : 'bg-transparent py-4',
+              ? 'bg-surface-card shadow-ambient pb-3 sm:py-3'
+              : 'bg-transparent pb-4 sm:py-4',
         )}
       >
         <Container>
-          <div className="flex items-center justify-between gap-4">
+          <div
+            className={cn(
+              'flex items-center justify-between gap-4',
+              // Extra top spacing on mobile only — needed because the header's
+              // outer pt-safe utility overrides any pt-* on the parent.
+              scrolled ? 'pt-3 sm:pt-0' : solid ? 'pt-4 sm:pt-0' : 'pt-5 sm:pt-0',
+            )}
+          >
             {/* ── Logo ── */}
             <Link
               to="/"

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Spinner } from '@/components/ui/Spinner'
+import { PageHeader } from '@/components/dashboard'
 import {
   listPublishedExams,
   listResultsForExam,
@@ -57,13 +58,12 @@ export function CoachExamsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Antrenör Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Sınavlar</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Bir sınav seçin ve öğrencilere kuşak terfi puanını verin.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Antrenör Paneli"
+        title="Sınavlar"
+        description="Bir sınav seçin ve öğrencilere kuşak terfi puanını verin."
+      />
+
 
       {selectedExam ? (
         <ExamScoringView exam={selectedExam} onBack={() => setSelectedExam(null)} />
@@ -333,7 +333,7 @@ function ScoreStudentModal({ result, onClose, onSaved }: ScoreModalProps) {
           <div className="flex flex-col gap-2">
             <span className="text-label-md text-on-surface/80 font-medium">Kazanılan Kuşak</span>
             <div className="grid grid-cols-3 gap-2">
-              {(['baslangic', 'orta', 'ileri'] as BeltLevel[]).map((lvl) => (
+              {(['beyaz', 'sari', 'yesil', 'mavi', 'kirmizi', 'siyah'] as BeltLevel[]).map((lvl) => (
                 <button
                   key={lvl}
                   type="button"

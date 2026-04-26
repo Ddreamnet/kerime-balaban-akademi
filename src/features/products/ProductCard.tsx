@@ -23,21 +23,25 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Card className="flex flex-col gap-0 p-0 overflow-hidden" hoverable>
-      {/* Image area — placeholder until admin uploads real images */}
-      <div
-        className={cn(
-          'aspect-[4/3] flex flex-col items-center justify-center gap-2',
-          'bg-surface-low relative'
+      <div className={cn('aspect-[4/3] bg-surface-low relative overflow-hidden')}>
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <span className="text-5xl select-none opacity-40" aria-hidden="true">
+              {categoryIcons[product.category] ?? '📦'}
+            </span>
+            <span className="text-label-sm text-on-surface/30 uppercase tracking-widest">
+              Fotoğraf yakında
+            </span>
+          </div>
         )}
-      >
-        <span className="text-5xl select-none opacity-40" aria-hidden="true">
-          {categoryIcons[product.category] ?? '📦'}
-        </span>
-        <span className="text-label-sm text-on-surface/30 uppercase tracking-widest">
-          Fotoğraf yakında
-        </span>
 
-        {/* Featured badge */}
         {product.is_featured && (
           <div className="absolute top-3 left-3">
             <span className="inline-flex items-center gap-1 bg-primary text-white rounded-full px-2.5 py-0.5 text-label-sm font-semibold">
@@ -98,11 +102,19 @@ export function ProductCardCompact({ product }: ProductCardProps) {
 
   return (
     <Card className="flex gap-4 items-start" hoverable>
-      {/* Icon */}
-      <div className="w-14 h-14 rounded-lg bg-surface-low flex items-center justify-center shrink-0">
-        <span className="text-2xl" aria-hidden="true">
-          {categoryIcons[product.category] ?? '📦'}
-        </span>
+      <div className="w-14 h-14 rounded-lg bg-surface-low flex items-center justify-center shrink-0 overflow-hidden">
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            loading="lazy"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-2xl" aria-hidden="true">
+            {categoryIcons[product.category] ?? '📦'}
+          </span>
+        )}
       </div>
 
       {/* Content */}

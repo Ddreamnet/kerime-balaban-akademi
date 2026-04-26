@@ -6,6 +6,7 @@ import { Container } from '@/components/layout/Container'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { SEO } from '@/components/SEO'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 // Icons assigned by position. If admin adds more than 4, extras cycle through the same set.
@@ -17,6 +18,11 @@ export function AboutPage() {
 
   return (
     <>
+      <SEO
+        title="Hakkımızda — Kerime Balaban Taekwondo Akademisi Bartın"
+        description="Kerime Balaban Taekwondo Akademisi hakkında: Baş Antrenör 3. Dan Siyah Kuşak Kerime Balaban öncülüğünde Bartın'da disiplin, özgüven ve başarı üzerine kurulu taekwondo eğitimi."
+        path="/hakkimizda"
+      />
       <PageHero
         label="Hakkımızda"
         headline={settings.about_hero_headline}

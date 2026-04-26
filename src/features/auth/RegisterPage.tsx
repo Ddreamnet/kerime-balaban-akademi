@@ -62,19 +62,13 @@ export function RegisterPage() {
     <Section bg="default" className="min-h-[calc(100dvh-4rem)] flex items-center py-12">
       <Container narrow>
         <div className="flex flex-col items-center gap-6">
-          {/* Logo */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-primary-glow">
-              <span className="font-display font-black text-white text-base tracking-tight">KBA</span>
-            </div>
-            <div className="text-center">
-              <h1 className="font-display font-bold text-headline-lg text-on-surface">
-                Kayıt Ol
-              </h1>
-              <p className="text-body-md text-on-surface/60 mt-1">
-                Hesap oluşturun
-              </p>
-            </div>
+          <div className="text-center">
+            <h1 className="font-display font-bold text-headline-lg text-on-surface">
+              Kayıt Ol
+            </h1>
+            <p className="text-body-md text-on-surface/60 mt-1">
+              Hesap oluşturun
+            </p>
           </div>
 
           <Card className="w-full">

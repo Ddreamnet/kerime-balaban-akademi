@@ -32,14 +32,17 @@ export function Footer() {
           {/* Brand column */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 w-fit" aria-label="Anasayfa">
-              <div className="w-9 h-9 rounded-md bg-gradient-primary flex items-center justify-center shadow-primary-glow/10">
-                <span className="font-display font-black text-white text-sm tracking-tight">KBA</span>
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-display font-bold text-white text-sm tracking-tight">Kerime Balaban</span>
-                <span className="font-display font-semibold text-primary-gradient text-xs tracking-widest uppercase text-primary">Akademi</span>
-              </div>
+            <Link
+              to="/"
+              className="inline-block w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+              aria-label="Kerime Balaban Akademi — Anasayfa"
+            >
+              <img
+                src="/images/logo-beyaz.png"
+                alt="Kerime Balaban Akademi"
+                className="h-14 w-auto"
+                draggable={false}
+              />
             </Link>
 
             <p className="text-body-md text-white/60 max-w-xs leading-relaxed">
@@ -134,6 +137,9 @@ export function Footer() {
               © {currentYear} {academyInfo.name}. Tüm hakları saklıdır.
             </p>
             <div className="flex items-center gap-4">
+              <Link to="/gizlilik" className="text-body-sm text-white/35 hover:text-white/60 transition-colors">
+                Gizlilik Politikası
+              </Link>
               <Link to="/giris" className="text-body-sm text-white/35 hover:text-white/60 transition-colors">
                 Giriş Yap
               </Link>

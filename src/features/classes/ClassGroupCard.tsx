@@ -4,7 +4,7 @@ import { cn } from '@/utils/cn'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import type { ClassGroup } from '@/types/content.types'
-import { trainingDayLabels, beltLevelLabels } from '@/data/classes'
+import { trainingDayLabels, beltLevelLabels, beltLevelColors } from '@/data/classes'
 
 interface ClassGroupCardProps {
   group: ClassGroup
@@ -18,9 +18,12 @@ const dayShortLabels: Record<string, string> = {
 }
 
 const beltLevelBorderColors: Record<string, string> = {
-  baslangic: 'border-l-yellow-400',
-  orta: 'border-l-blue-500',
-  ileri: 'border-l-primary',
+  beyaz: 'border-l-on-surface/20',
+  sari: 'border-l-yellow-400',
+  yesil: 'border-l-green-500',
+  mavi: 'border-l-blue-500',
+  kirmizi: 'border-l-primary',
+  siyah: 'border-l-on-surface',
 }
 
 export function ClassGroupCard({ group, variant = 'default' }: ClassGroupCardProps) {
@@ -44,9 +47,7 @@ export function ClassGroupCard({ group, variant = 'default' }: ClassGroupCardPro
               className={cn(
                 'inline-flex items-center rounded-full px-2.5 py-0.5',
                 'text-label-sm uppercase tracking-widest font-semibold',
-                level === 'baslangic' && 'bg-yellow-100 text-yellow-800',
-                level === 'orta' && 'bg-blue-100 text-blue-800',
-                level === 'ileri' && 'bg-red-100 text-primary',
+                beltLevelColors[level],
               )}
             >
               {beltLevelLabels[level]}

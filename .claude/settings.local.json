@@ -40,7 +40,24 @@
       "Bash(sudo -n apt-get install -y imagemagick)",
       "Bash(mkdir -p /tmp/icongen)",
       "Read(//tmp/**)",
-      "Bash(npm init *)"
+      "Bash(npm init *)",
+      "Bash(netstat -tlnp)",
+      "Bash(grep -n \"EditProfileModal\\\\|</div>\\\\s*$\" /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/src/features/admin/AdminStudentsPage.tsx)",
+      "Bash(ffprobe -v error -show_format -show_streams /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/public/loading.gif)",
+      "Bash(identify /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/public/loading.gif)",
+      "Bash(xxd /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/public/loading.gif)",
+      "Bash(sudo apt *)",
+      "Bash(apt list *)",
+      "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi log --oneline --all -- \"*payment*\")",
+      "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi show c74bb3d:supabase/migrations/)",
+      "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi log --name-only --all -- \"*migrations*\")",
+      "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi log --all --format=\"%H %s\")",
+      "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi show c74bb3d:src/types/database.types.ts)",
+      "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi show c74bb3d)",
+      "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi show c74bb3d:supabase/)",
+      "Bash(git ls-tree *)",
+      "Bash(supabase --version)",
+      "Bash(npx supabase *)"
     ]
   }
 }

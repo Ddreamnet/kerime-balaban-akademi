@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Badge } from '@/components/ui/Badge'
 import { AvatarUpload } from '@/components/ui/AvatarUpload'
+import { PageHeader } from '@/components/dashboard'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getMyChild,
@@ -68,16 +69,15 @@ export function ChildProfilePage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Veli Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Çocuğum</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          {child
+      <PageHeader
+        kicker="Veli Paneli"
+        title="Çocuğum"
+        description={
+          child
             ? 'Çocuğunuzun bilgilerini görüntüleyin ve düzenleyin.'
-            : 'Çocuğunuzu akademiye kaydedin.'}
-        </p>
-      </div>
+            : 'Çocuğunuzu akademiye kaydedin.'
+        }
+      />
 
       {/* Content: view or edit */}
       {child && !isEditing ? (
@@ -329,10 +329,10 @@ function ChildForm({ existing, classes, parentId, onSaved, onCancel }: ChildForm
         {/* Belt level selector */}
         <div className="flex flex-col gap-2">
           <span className="text-label-md text-on-surface/80 font-medium">
-            Mevcut Kuşak Seviyesi
+            Mevcut Kuşak
           </span>
           <div className="grid grid-cols-3 gap-2">
-            {(['baslangic', 'orta', 'ileri'] as BeltLevel[]).map((lvl) => (
+            {(['beyaz', 'sari', 'yesil', 'mavi', 'kirmizi', 'siyah'] as BeltLevel[]).map((lvl) => (
               <OptionButton
                 key={lvl}
                 selected={selectedBelt === lvl}

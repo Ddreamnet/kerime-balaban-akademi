@@ -1,8 +1,9 @@
 /**
  * Supabase Storage uploads.
  *
- * Buckets expected (create in Supabase dashboard):
+ * Buckets expected (created via migrations):
  *   - avatars         (public)  — profile photos (users + children)
+ *   - content         (public)  — site content images (announcements, products)
  *   - child-documents (private) — athlete documents, belt certificates, etc.
  */
 
@@ -10,6 +11,7 @@ import { supabase } from './supabase'
 import { dataUrlToBlob } from './capacitor'
 
 const AVATAR_BUCKET = 'avatars'
+const CONTENT_BUCKET = 'content'
 const DOCS_BUCKET = 'child-documents'
 
 export interface UploadResult {
@@ -19,30 +21,53 @@ export interface UploadResult {
 }
 
 /**
- * Upload an avatar image (from Camera.pickImage) and return its public URL.
- * Stored under `{userId}/{timestamp}.{ext}` and marked as the owner via RLS.
+ * Generic image upload to a public bucket. Stored under
+ * `{prefix}/{timestamp}.{ext}` and returned as a public CDN URL.
  */
-export async function uploadAvatar(
-  userId: string,
+async function uploadImage(
+  bucket: string,
+  prefix: string,
   dataUrl: string,
   format: string,
 ): Promise<UploadResult> {
   const blob = dataUrlToBlob(dataUrl)
   const ext = (format || 'jpg').toLowerCase().replace('jpeg', 'jpg')
-  const path = `${userId}/${Date.now()}.${ext}`
+  const path = `${prefix}/${Date.now()}.${ext}`
 
-  const { error } = await supabase.storage
-    .from(AVATAR_BUCKET)
-    .upload(path, blob, {
-      contentType: blob.type || `image/${ext}`,
-      upsert: true,
-      cacheControl: '3600',
-    })
+  const { error } = await supabase.storage.from(bucket).upload(path, blob, {
+    contentType: blob.type || `image/${ext}`,
+    upsert: true,
+    cacheControl: '3600',
+  })
 
   if (error) return { url: null, path: null, error: error.message }
 
-  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path)
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
   return { url: data.publicUrl, path, error: null }
+}
+
+/**
+ * Upload an avatar image (from Camera.pickImage) and return its public URL.
+ * Stored under `{userId}/{timestamp}.{ext}` in the avatars bucket.
+ */
+export function uploadAvatar(
+  userId: string,
+  dataUrl: string,
+  format: string,
+): Promise<UploadResult> {
+  return uploadImage(AVATAR_BUCKET, userId, dataUrl, format)
+}
+
+/**
+ * Upload a site content image (announcement cover, product photo, etc.)
+ * Stored under `{folder}/{timestamp}.{ext}` in the content bucket.
+ */
+export function uploadContentImage(
+  folder: string,
+  dataUrl: string,
+  format: string,
+): Promise<UploadResult> {
+  return uploadImage(CONTENT_BUCKET, folder, dataUrl, format)
 }
 
 /**

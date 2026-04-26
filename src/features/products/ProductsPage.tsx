@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MessageCircle } from 'lucide-react'
 import { PageHero } from '@/components/layout/PageHero'
 import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
+import { Spinner } from '@/components/ui/Spinner'
 import { ProductCard } from './ProductCard'
-import { products, productCategoryLabels } from '@/data/products'
+import { SEO } from '@/components/SEO'
+import { productCategoryLabels } from '@/data/products'
+import { listAvailableProducts } from '@/lib/products'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { cn } from '@/utils/cn'
-import type { ProductCategory } from '@/types/content.types'
+import type { Product, ProductCategory } from '@/types/content.types'
 
 type FilterKey = 'all' | ProductCategory
 
@@ -20,14 +23,35 @@ const filters: { key: FilterKey; label: string }[] = [
 
 export function ProductsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all')
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const settings = useSiteSettings()
 
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const list = await listAvailableProducts()
+      if (!cancelled) {
+        setProducts(list)
+        setIsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const visible = products.filter(
-    (p) => p.is_available && (activeFilter === 'all' || p.category === activeFilter)
+    (p) => activeFilter === 'all' || p.category === activeFilter
   )
 
   return (
     <>
+      <SEO
+        title="Taekwondo Ürünleri — Dobok, Koruyucu Ekipman | Kerime Balaban Akademi"
+        description="Taekwondo doboku, kask, el-ayak koruyucu, hogu, kuşak setleri. Kerime Balaban Akademi öğrencileri için kaliteli taekwondo ekipmanları. WhatsApp ile hızlı bilgi."
+        path="/urunler"
+      />
       <PageHero
         label={settings.products_hero_label}
         headline={settings.products_hero_headline}
@@ -58,24 +82,30 @@ export function ProductsPage() {
               ))}
             </div>
 
-            {/* Count */}
-            <p className="text-body-sm text-on-surface/40">
-              {visible.length} ürün gösteriliyor
-            </p>
-
-            {/* Grid */}
-            {visible.length > 0 ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {visible.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Spinner size="lg" />
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 py-16 text-center">
-                <p className="text-body-lg text-on-surface/40">
-                  Bu kategoride ürün bulunamadı.
+              <>
+                <p className="text-body-sm text-on-surface/40">
+                  {visible.length} ürün gösteriliyor
                 </p>
-              </div>
+
+                {visible.length > 0 ? (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {visible.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 py-16 text-center">
+                    <p className="text-body-lg text-on-surface/40">
+                      Bu kategoride ürün bulunamadı.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </Container>

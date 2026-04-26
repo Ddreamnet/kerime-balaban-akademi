@@ -14,6 +14,7 @@ import {
 } from '@/lib/attendance'
 import type { ClassGroup } from '@/types/content.types'
 import { trainingDayLabels } from '@/data/classes'
+import { PageHeader } from '@/components/dashboard'
 import { cn } from '@/utils/cn'
 import { formatDateLong } from '@/utils/format'
 
@@ -116,14 +117,12 @@ export function CoachAttendancePage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-label-md text-primary uppercase tracking-widest">Antrenör Paneli</p>
-        <h1 className="font-display text-headline-lg text-on-surface">Devamsızlık</h1>
-        <p className="text-body-md text-on-surface/60 mt-1">
-          Grup ve tarih seçin, her öğrenciye dokunarak durumu güncelleyin.
-        </p>
-      </div>
+      <PageHeader
+        kicker="Antrenör Paneli"
+        title="Devamsızlık"
+        description="Grup ve tarih seçin, her öğrenciye dokunarak durumu güncelleyin."
+      />
+
 
       {/* Controls */}
       <Card className="flex flex-col gap-4">
