@@ -56,16 +56,15 @@ export function MobileDrawer({ isOpen, onClose, navItems }: MobileDrawerProps) {
           <Link
             to="/"
             onClick={onClose}
-            className="flex items-center gap-2.5"
-            aria-label="Anasayfa"
+            className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+            aria-label="Kerime Balaban Akademi — Anasayfa"
           >
-            <div className="w-8 h-8 rounded-md bg-gradient-primary flex items-center justify-center">
-              <span className="font-display font-black text-white text-xs tracking-tight">KBA</span>
-            </div>
-            <div className="flex flex-col leading-none">
-              <span className="font-display font-bold text-on-surface text-sm">Kerime Balaban</span>
-              <span className="font-display font-semibold text-primary text-xs tracking-widest uppercase">Akademi</span>
-            </div>
+            <img
+              src="/images/logo-renkli.png"
+              alt="Kerime Balaban Akademi"
+              className="h-10 w-auto object-contain"
+              draggable={false}
+            />
           </Link>
           <button
             onClick={onClose}
