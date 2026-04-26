@@ -59,18 +59,44 @@ export function ParentPaymentsPage() {
     void load()
   }, [user])
 
-  const summary = useMemo(() => computePaymentSummary(records), [records])
+  // Görünür kayıtlar: geçmiş tüm ödemeler + bir sonraki yaklaşan ödeme.
+  // İleride generate edilmiş aylar, kendinden önceki ödemenin vadesi geçene
+  // kadar gizli kalır. Örn. vade 25 Mayıs ise 26 Mayıs itibariyle Haziran
+  // satırı listeye düşer.
+  const visibleRecords = useMemo(() => {
+    if (records.length === 0) return []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayMs = today.getTime()
+
+    let nextUpcoming: PaymentRecord | null = null
+    const past: PaymentRecord[] = []
+    for (const r of records) {
+      const due = new Date(r.due_date)
+      due.setHours(0, 0, 0, 0)
+      if (due.getTime() <= todayMs) {
+        past.push(r)
+      } else if (!nextUpcoming || r.due_date < nextUpcoming.due_date) {
+        nextUpcoming = r
+      }
+    }
+    // records `period_start` descending sıralı geliyor; past o sırayı koruyor.
+    // nextUpcoming hepsinden yeni → en üstte.
+    return nextUpcoming ? [nextUpcoming, ...past] : past
+  }, [records])
+
+  const summary = useMemo(() => computePaymentSummary(visibleRecords), [visibleRecords])
 
   // The "next due" card highlights the most urgent unpaid period:
   //   1. Earliest overdue, else
   //   2. Earliest pending (closest upcoming due date)
   const spotlight = useMemo(() => {
     const now = new Date()
-    const unpaid = records
+    const unpaid = visibleRecords
       .filter((r) => derivePaymentStatus(r, now) !== 'paid')
       .sort((a, b) => a.due_date.localeCompare(b.due_date))
     return unpaid[0] ?? null
-  }, [records])
+  }, [visibleRecords])
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
@@ -99,7 +125,7 @@ export function ParentPaymentsPage() {
           )}
 
           {/* Summary */}
-          {records.length > 0 && (
+          {visibleRecords.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               <SummaryTile
                 label="Ödenen"
@@ -123,13 +149,13 @@ export function ParentPaymentsPage() {
           )}
 
           {/* History */}
-          {records.length > 0 ? (
+          {visibleRecords.length > 0 ? (
             <div className="flex flex-col gap-3">
               <h3 className="text-label-md uppercase tracking-widest text-on-surface/50 px-1">
-                Geçmiş ({records.length})
+                Geçmiş ({visibleRecords.length})
               </h3>
               <div className="flex flex-col gap-2">
-                {records.map((r) => (
+                {visibleRecords.map((r) => (
                   <PaymentRow key={r.id} record={r} />
                 ))}
               </div>

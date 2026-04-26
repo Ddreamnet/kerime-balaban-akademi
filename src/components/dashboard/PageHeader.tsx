@@ -52,7 +52,7 @@ export function PageHeader({
       )}
 
       <div className="relative z-10 flex flex-col gap-1 min-w-0">
-        {kicker && <p className="panel-kicker">{kicker}</p>}
+        {kicker && <p className="panel-kicker hidden lg:block">{kicker}</p>}
         <h1 className="font-display text-headline-lg text-on-surface flex flex-wrap items-baseline gap-2">
           <span>{title}</span>
           {titleAccent}

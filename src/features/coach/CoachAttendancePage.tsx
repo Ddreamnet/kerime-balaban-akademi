@@ -119,7 +119,7 @@ export function CoachAttendancePage() {
     <div className="flex flex-col gap-6 max-w-3xl">
       <PageHeader
         kicker="Antrenör Paneli"
-        title="Devamsızlık"
+        title="Yoklama"
         description="Grup ve tarih seçin, her öğrenciye dokunarak durumu güncelleyin."
       />
 

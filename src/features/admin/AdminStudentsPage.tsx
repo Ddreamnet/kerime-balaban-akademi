@@ -1,20 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowRight,
-  Cake,
+  ChevronRight,
   GraduationCap,
   Mail,
   Pencil,
   Phone,
   Power,
   PowerOff,
+  Search,
   Users,
+  X,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
-import { Button } from '@/components/ui/Button'
 import { EditProfileModal } from '@/components/admin/EditProfileModal'
 import { EditChildModal } from '@/components/admin/EditChildModal'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
@@ -33,9 +33,8 @@ import { cn } from '@/utils/cn'
 /**
  * Admin: Üyeler — öğrenciler ve veliler birlikte.
  *
- * Her kart belt-renkli aksent şeritle başlar; öğrenci hero'su, veli bilgi şeridi,
- * eylem satırı tek bir akış halinde. Veli pasif olsa bile kart aktif öğrenciye
- * odaklı kalır; pasif rozeti header'da görünür.
+ * Kompakt kart tasarımı: belt-renkli ince sol şerit, küçük avatar, tek satır
+ * öğrenci başlığı + alt satırda ince veli özeti. Aksiyonlar ikon-buton şeklinde.
  */
 export function AdminStudentsPage() {
   const [students, setStudents] = useState<ChildWithParent[]>([])
@@ -45,6 +44,7 @@ export function AdminStudentsPage() {
   const [actioningParentId, setActioningParentId] = useState<string | null>(null)
   const [editing, setEditing] = useState<UserProfile | null>(null)
   const [editingChild, setEditingChild] = useState<ChildWithParent | null>(null)
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -66,6 +66,25 @@ export function AdminStudentsPage() {
   const classById = new Map(classes.map((c) => [c.id, c]))
   const parentIdsWithChildren = new Set(students.map((s) => s.parent_id))
   const parentsWithoutChildren = parents.filter((p) => !parentIdsWithChildren.has(p.id))
+
+  // Instant search: ad veya soyada göre, hem öğrenci hem veli isimlerinde.
+  const { filteredStudents, filteredParentsOnly } = useMemo(() => {
+    const q = query.trim().toLocaleLowerCase('tr')
+    if (!q) {
+      return { filteredStudents: students, filteredParentsOnly: parentsWithoutChildren }
+    }
+    const tokens = q.split(/\s+/).filter(Boolean)
+    const matches = (...fields: Array<string | null | undefined>) => {
+      const haystack = fields.filter(Boolean).join(' ').toLocaleLowerCase('tr')
+      return tokens.every((t) => haystack.includes(t))
+    }
+    return {
+      filteredStudents: students.filter((s) => matches(s.full_name, s.parent_name)),
+      filteredParentsOnly: parentsWithoutChildren.filter((p) => matches(p.full_name)),
+    }
+  }, [query, students, parentsWithoutChildren])
+
+  const totalVisible = filteredStudents.length + filteredParentsOnly.length
 
   const toggleActive = async (parentId: string, currentlyActive: boolean) => {
     setActioningParentId(parentId)
@@ -103,12 +122,34 @@ export function AdminStudentsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex flex-col gap-5 max-w-4xl">
       <PageHeader
         kicker="Yönetici Paneli"
         title="Üyeler"
         description={`${students.length} öğrenci · ${parents.length} veli`}
       />
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/40 pointer-events-none" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Öğrenci veya veli adıyla ara..."
+          className="w-full rounded-xl bg-surface-card pl-10 pr-10 h-11 text-body-md border border-outline/15 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-colors"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            aria-label="Aramayı temizle"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full text-on-surface/45 hover:text-on-surface hover:bg-surface-low flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
@@ -120,11 +161,17 @@ export function AdminStudentsPage() {
           title="Henüz üye yok"
           description="Veliler kayıt olup onaylandıkça burada listelenecekler."
         />
+      ) : query.trim() && totalVisible === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="Sonuç bulunamadı"
+          description={`"${query}" için eşleşen üye yok.`}
+        />
       ) : (
         <>
-          {students.length > 0 && (
-            <section className="flex flex-col gap-4">
-              {students.map((s) => {
+          {filteredStudents.length > 0 && (
+            <section className="flex flex-col gap-2.5">
+              {filteredStudents.map((s) => {
                 const parent = parentById.get(s.parent_id)
                 const parentActive = parent?.is_active ?? s.parent_is_active
                 return (
@@ -144,19 +191,16 @@ export function AdminStudentsPage() {
             </section>
           )}
 
-          {parentsWithoutChildren.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 mt-2">
-                <h2 className="font-display font-semibold text-title-md text-on-surface">
+          {filteredParentsOnly.length > 0 && (
+            <section className="flex flex-col gap-2.5">
+              <div className="flex items-center gap-2 mt-1">
+                <h2 className="font-display font-semibold text-title-sm text-on-surface">
                   Çocuğu Olmayan Veliler
                 </h2>
-                <Badge variant="warning">{parentsWithoutChildren.length}</Badge>
+                <Badge variant="warning">{filteredParentsOnly.length}</Badge>
               </div>
-              <p className="text-body-sm text-on-surface/50 -mt-2">
-                Henüz çocuk eklememiş veli hesapları.
-              </p>
 
-              {parentsWithoutChildren.map((p) => (
+              {filteredParentsOnly.map((p) => (
                 <ParentOnlyCard
                   key={p.id}
                   parent={p}
@@ -168,8 +212,8 @@ export function AdminStudentsPage() {
             </section>
           )}
 
-          {students.length === 0 && parentsWithoutChildren.length > 0 && (
-            <Card className="flex items-center gap-3 py-4 px-4">
+          {!query.trim() && students.length === 0 && parentsWithoutChildren.length > 0 && (
+            <Card className="flex items-center gap-3 py-3 px-4">
               <GraduationCap className="w-5 h-5 text-on-surface/40 shrink-0" />
               <p className="text-body-sm text-on-surface/60">
                 Henüz öğrenci kaydı yok — veliler çocuklarını eklediğinde burada listelenecek.
@@ -198,25 +242,20 @@ export function AdminStudentsPage() {
   )
 }
 
-// ─── Student card ───────────────────────────────────────────────────────────
+// ─── Belt accent (left strip) ───────────────────────────────────────────────
 
-/**
- * Belt-tinted accent strip + ring. Tailwind sees these literals at build time
- * because they live in source — no purge issue.
- */
-const BELT_ACCENT: Record<
-  string,
-  { strip: string; ring: string }
-> = {
-  beyaz:   { strip: 'bg-gray-200',    ring: 'ring-gray-200' },
-  sari:    { strip: 'bg-yellow-300',  ring: 'ring-yellow-300' },
-  yesil:   { strip: 'bg-green-400',   ring: 'ring-green-300' },
-  mavi:    { strip: 'bg-blue-400',    ring: 'ring-blue-300' },
-  kirmizi: { strip: 'bg-red-400',     ring: 'ring-red-300' },
-  siyah:   { strip: 'bg-on-surface',  ring: 'ring-on-surface/40' },
+const BELT_STRIP: Record<string, string> = {
+  beyaz: 'bg-gray-200',
+  sari: 'bg-yellow-300',
+  yesil: 'bg-green-400',
+  mavi: 'bg-blue-400',
+  kirmizi: 'bg-red-400',
+  siyah: 'bg-on-surface',
 }
 
-const NEUTRAL_ACCENT = { strip: 'bg-surface-high', ring: 'ring-surface-high' }
+const NEUTRAL_STRIP = 'bg-surface-high'
+
+// ─── Student card ───────────────────────────────────────────────────────────
 
 function StudentCard({
   student,
@@ -237,139 +276,89 @@ function StudentCard({
   onEditParent: () => void
   onToggleParentActive: () => void
 }) {
-  const accent = student.belt_level ? BELT_ACCENT[student.belt_level] : NEUTRAL_ACCENT
-  const age = student.birthday ? ageFromIso(student.birthday) : null
+  const stripColor = student.belt_level ? BELT_STRIP[student.belt_level] : NEUTRAL_STRIP
   const beltClass = student.belt_level ? beltLevelColors[student.belt_level] : null
 
   return (
     <Card padding="none" className="overflow-hidden hover:shadow-ambient-md transition-shadow">
-      {/* Belt-tinted top strip */}
-      <div className={cn('h-1.5 w-full', accent.strip)} />
+      <div className="flex items-stretch">
+        {/* Belt-tinted vertical strip */}
+        <div className={cn('w-1 shrink-0', stripColor)} aria-hidden="true" />
 
-      <div className="flex flex-col md:flex-row md:items-stretch">
-        {/* Left: student */}
-        <div className="flex-1 min-w-0 p-4 flex items-start gap-3">
-          <Link
-            to={`/admin/ogrenci/${student.id}`}
-            className={cn(
-              'w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center shrink-0 overflow-hidden ring-4 ring-offset-2 ring-offset-surface-card',
-              accent.ring,
-            )}
-            aria-label={`${student.full_name} profili`}
-          >
-            {student.avatar_url ? (
-              <img
-                src={student.avatar_url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="font-display font-black text-white text-lg">
-                {student.full_name[0]?.toUpperCase() ?? '?'}
-              </span>
-            )}
-          </Link>
+        <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col gap-2">
+          {/* Top row: avatar + name + meta + actions */}
+          <div className="flex items-start gap-2.5 h-12">
+            <Link
+              to={`/admin/ogrenci/${student.id}`}
+              className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0 overflow-hidden"
+              aria-label={`${student.full_name} profili`}
+            >
+              {student.avatar_url ? (
+                <img src={student.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-display font-black text-white text-body-md">
+                  {student.full_name[0]?.toUpperCase() ?? '?'}
+                </span>
+              )}
+            </Link>
 
-          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link
-                to={`/admin/ogrenci/${student.id}`}
-                className="font-display font-bold text-title-lg text-on-surface hover:text-primary transition-colors truncate"
-              >
-                {student.full_name}
-              </Link>
-              {!parentActive && <Badge variant="warning">Veli pasif</Badge>}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              {beltClass && student.belt_level && (
-                <span
-                  className={cn(
-                    'inline-flex items-center rounded-full px-2 py-0.5',
-                    'text-label-sm font-semibold uppercase tracking-widest',
-                    beltClass,
-                  )}
+            <div className="flex-1 min-w-0 self-stretch flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 min-w-0 h-5">
+                <Link
+                  to={`/admin/ogrenci/${student.id}`}
+                  className="min-h-0 font-display font-semibold text-body-lg !leading-none text-on-surface hover:text-primary transition-colors truncate"
                 >
-                  {beltLevelLabels[student.belt_level]}
-                </span>
-              )}
-              {classGroup && (
-                <span className="inline-flex items-center gap-1 text-body-sm text-on-surface/65">
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  {classGroup.name}
-                </span>
-              )}
-              {age !== null && (
-                <span className="inline-flex items-center gap-1 text-body-sm text-on-surface/60">
-                  <Cake className="w-3.5 h-3.5" />
-                  {age} yaş
-                </span>
-              )}
-              {student.gender && (
-                <span className="text-body-sm text-on-surface/55">
-                  {student.gender === 'kiz' ? 'Kız' : 'Erkek'}
-                </span>
-              )}
+                  {student.full_name}
+                </Link>
+                {!parentActive && (
+                  <span className="inline-flex items-center rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide bg-yellow-100 text-yellow-800 shrink-0">
+                    Pasif
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-body-sm !leading-none text-on-surface/60 min-w-0 h-4">
+                {beltClass && student.belt_level && (
+                  <span
+                    className={cn(
+                      'inline-flex items-center rounded-full px-1.5 py-px shrink-0',
+                      'text-[10px] font-semibold uppercase tracking-wide',
+                      beltClass,
+                    )}
+                  >
+                    {beltLevelLabels[student.belt_level]}
+                  </span>
+                )}
+                {classGroup && (
+                  <span className="inline-flex items-center gap-1 truncate">
+                    <GraduationCap className="w-3 h-3 shrink-0 text-on-surface/45" />
+                    <span className="truncate">{classGroup.name}</span>
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Action row */}
-            <div className="flex flex-wrap items-center gap-1 mt-1">
+            <div className="self-center flex items-center gap-0.5 shrink-0">
+              <IconButton title="Öğrenciyi düzenle" onClick={onEditChild}>
+                <Pencil className="w-3.5 h-3.5" />
+              </IconButton>
               <Link
                 to={`/admin/ogrenci/${student.id}`}
-                className="inline-flex items-center gap-1 px-3 h-8 rounded-md bg-primary text-white text-body-sm font-semibold hover:bg-primary-dark transition-colors"
+                title="Profili aç"
+                aria-label="Profili aç"
+                className="min-h-0 w-8 h-8 rounded-md text-on-surface/45 hover:text-primary hover:bg-primary/5 flex items-center justify-center transition-colors"
               >
-                Profil
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               </Link>
-              <button
-                type="button"
-                onClick={onEditChild}
-                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-md text-body-sm font-semibold text-on-surface/65 hover:text-primary hover:bg-primary/5 transition-colors"
-                title="Öğrenciyi düzenle"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Düzenle
-              </button>
             </div>
           </div>
-        </div>
 
-        {/* Right: parent (compact) */}
-        {parent && (
-          <div
-            className={cn(
-              'md:w-72 md:shrink-0 md:border-l md:border-surface-low',
-              'bg-surface-low/50 md:bg-transparent',
-              'p-3 md:p-4 flex flex-col gap-2',
-            )}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-label-sm uppercase tracking-wider text-on-surface/45">
+          {/* Parent strip */}
+          {parent && (
+            <div className="flex items-center gap-2 pt-2 border-t border-surface-low/70 min-w-0">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-on-surface/40 shrink-0">
                 Veli
               </span>
-              <button
-                type="button"
-                onClick={onToggleParentActive}
-                disabled={isToggling}
-                className={cn(
-                  'inline-flex items-center gap-1 px-2 h-7 rounded-md text-body-sm font-semibold transition-colors disabled:opacity-50',
-                  parentActive
-                    ? 'text-on-surface/45 hover:text-primary hover:bg-primary/5'
-                    : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100',
-                )}
-                title={parentActive ? 'Veliyi devre dışı bırak' : 'Veliyi aktifleştir'}
-              >
-                {parentActive ? (
-                  <PowerOff className="w-3.5 h-3.5" />
-                ) : (
-                  <Power className="w-3.5 h-3.5" />
-                )}
-                {!parentActive && <span>Aktifleştir</span>}
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center overflow-hidden shrink-0">
                 {student.parent_avatar_url ? (
                   <img
                     src={student.parent_avatar_url}
@@ -377,52 +366,59 @@ function StudentCard({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="font-display font-bold text-primary text-body-sm">
+                  <span className="font-display font-bold text-primary text-[10px]">
                     {student.parent_name[0]?.toUpperCase() ?? '?'}
                   </span>
                 )}
               </div>
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="font-display font-semibold text-body-sm text-on-surface truncate">
-                  {student.parent_name}
-                </span>
-                <span className="text-body-sm text-on-surface/55 truncate">
-                  {student.parent_email}
-                </span>
+              <span className="text-body-sm text-on-surface/75 truncate flex-1 min-w-0">
+                {student.parent_name}
+              </span>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <a
+                  href={`mailto:${student.parent_email}`}
+                  title={student.parent_email}
+                  aria-label="E-posta"
+                  className="min-h-0 w-7 h-7 rounded-md text-on-surface/50 hover:text-primary hover:bg-primary/5 flex items-center justify-center transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                </a>
+                {student.parent_phone && (
+                  <a
+                    href={`tel:${student.parent_phone}`}
+                    title={student.parent_phone}
+                    aria-label="Telefon"
+                    className="min-h-0 w-7 h-7 rounded-md text-on-surface/50 hover:text-primary hover:bg-primary/5 flex items-center justify-center transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                <IconButton title="Veliyi düzenle" onClick={onEditParent}>
+                  <Pencil className="w-3.5 h-3.5" />
+                </IconButton>
+                <button
+                  type="button"
+                  onClick={onToggleParentActive}
+                  disabled={isToggling}
+                  title={parentActive ? 'Veliyi devre dışı bırak' : 'Veliyi aktifleştir'}
+                  aria-label={parentActive ? 'Veliyi devre dışı bırak' : 'Veliyi aktifleştir'}
+                  className={cn(
+                    'min-h-0 w-7 h-7 rounded-md flex items-center justify-center transition-colors disabled:opacity-50',
+                    parentActive
+                      ? 'text-on-surface/50 hover:text-primary hover:bg-primary/5'
+                      : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100',
+                  )}
+                >
+                  {parentActive ? (
+                    <PowerOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Power className="w-3.5 h-3.5" />
+                  )}
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center gap-1">
-              <a
-                href={`mailto:${student.parent_email}`}
-                title={student.parent_email}
-                aria-label="Veliye e-posta"
-                className="w-8 h-8 rounded-md text-on-surface/55 hover:text-primary hover:bg-white flex items-center justify-center transition-colors"
-              >
-                <Mail className="w-4 h-4" />
-              </a>
-              {student.parent_phone && (
-                <a
-                  href={`tel:${student.parent_phone}`}
-                  title={student.parent_phone}
-                  aria-label="Veliyi ara"
-                  className="w-8 h-8 rounded-md text-on-surface/55 hover:text-primary hover:bg-white flex items-center justify-center transition-colors"
-                >
-                  <Phone className="w-4 h-4" />
-                </a>
-              )}
-              <button
-                type="button"
-                onClick={onEditParent}
-                className="ml-auto inline-flex items-center gap-1 px-2 h-8 rounded-md text-body-sm font-semibold text-on-surface/55 hover:text-primary hover:bg-white transition-colors"
-                title="Veliyi düzenle"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Düzenle
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Card>
   )
@@ -442,70 +438,94 @@ function ParentOnlyCard({
   onToggleActive: () => void
 }) {
   return (
-    <Card className="flex flex-col gap-3 md:flex-row md:items-center">
-      <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0 overflow-hidden">
+    <Card padding="none" className="overflow-hidden">
+      <div className="flex items-start gap-2.5 px-3 py-2.5">
+        <div className="w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center shrink-0 overflow-hidden">
           {parent.avatar_url ? (
-            <img
-              src={parent.avatar_url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
+            <img src={parent.avatar_url} alt="" className="w-full h-full object-cover" />
           ) : (
-            <span className="font-display font-bold text-primary">
+            <span className="font-display font-bold text-primary text-body-md">
               {parent.full_name?.[0]?.toUpperCase() ?? '?'}
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-display font-semibold text-body-lg text-on-surface truncate">
+        <div className="flex-1 min-w-0 self-stretch flex flex-col justify-between">
+          <div className="flex items-center gap-1.5 min-w-0 h-5">
+            <h3 className="font-display font-semibold text-body-lg !leading-none text-on-surface truncate">
               {parent.full_name || 'İsimsiz'}
             </h3>
-            <Badge variant={parent.is_active ? 'success' : 'warning'}>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide shrink-0',
+                parent.is_active ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800',
+              )}
+            >
               {parent.is_active ? 'Aktif' : 'Pasif'}
-            </Badge>
+            </span>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-body-sm text-on-surface/60">
-            <span className="flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-on-surface/40 shrink-0" />
+          <div className="flex items-center gap-2 text-body-sm !leading-none text-on-surface/60 min-w-0 h-4">
+            <span className="flex items-center gap-1 truncate">
+              <Mail className="w-3 h-3 shrink-0 text-on-surface/40" />
               <span className="truncate">{parent.email}</span>
             </span>
             {parent.phone && (
-              <span className="flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-on-surface/40 shrink-0" />
+              <span className="flex items-center gap-1 shrink-0">
+                <Phone className="w-3 h-3 text-on-surface/40" />
                 {parent.phone}
               </span>
             )}
           </div>
         </div>
-      </div>
 
-      <div className="flex flex-wrap gap-2 md:shrink-0">
-        <Button variant="ghost" size="sm" onClick={onEdit}>
-          <Pencil className="w-4 h-4" />
-          Düzenle
-        </Button>
-        <Button
-          variant={parent.is_active ? 'secondary' : 'primary'}
-          size="sm"
-          onClick={onToggleActive}
-          loading={isToggling}
-        >
-          {parent.is_active ? 'Devre Dışı Bırak' : 'Aktifleştir'}
-        </Button>
+        <div className="self-center flex items-center gap-0.5 shrink-0">
+          <IconButton title="Düzenle" onClick={onEdit}>
+            <Pencil className="w-3.5 h-3.5" />
+          </IconButton>
+          <button
+            type="button"
+            onClick={onToggleActive}
+            disabled={isToggling}
+            title={parent.is_active ? 'Veliyi devre dışı bırak' : 'Veliyi aktifleştir'}
+            aria-label={parent.is_active ? 'Veliyi devre dışı bırak' : 'Veliyi aktifleştir'}
+            className={cn(
+              'min-h-0 w-7 h-7 rounded-md flex items-center justify-center transition-colors disabled:opacity-50',
+              parent.is_active
+                ? 'text-on-surface/50 hover:text-primary hover:bg-primary/5'
+                : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100',
+            )}
+          >
+            {parent.is_active ? (
+              <PowerOff className="w-3.5 h-3.5" />
+            ) : (
+              <Power className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
       </div>
     </Card>
   )
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Reusable icon button ───────────────────────────────────────────────────
 
-function ageFromIso(iso: string): number {
-  const b = new Date(iso)
-  const now = new Date()
-  let age = now.getFullYear() - b.getFullYear()
-  const m = now.getMonth() - b.getMonth()
-  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--
-  return age
+function IconButton({
+  children,
+  title,
+  onClick,
+}: {
+  children: React.ReactNode
+  title: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className="min-h-0 w-7 h-7 rounded-md text-on-surface/50 hover:text-primary hover:bg-primary/5 flex items-center justify-center transition-colors"
+    >
+      {children}
+    </button>
+  )
 }

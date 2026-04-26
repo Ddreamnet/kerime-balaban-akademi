@@ -84,14 +84,6 @@ function useSwipeBack(onBack: () => void, threshold = 80) {
   }, [onBack, threshold])
 }
 
-// ─── Mobile nav title resolver ──────────────────────────────────────────────
-
-function usePageTitle(navItems: DashboardNavItem[]): string {
-  const { pathname } = useLocation()
-  const match = navItems.find((item) => pathname.endsWith(item.href.split('/').pop() ?? ''))
-  return match?.label ?? 'Panel'
-}
-
 // ─── User block (clickable when profileHref is set) ─────────────────────────
 
 interface UserBlockProps {
@@ -199,7 +191,6 @@ export function DashboardLayout({ navItems, title, profileHref }: DashboardLayou
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const pageTitle = usePageTitle(navItems)
   const panelHome = navItems[0]?.href ?? '/'
 
   // Close mobile nav on route change
@@ -308,12 +299,9 @@ export function DashboardLayout({ navItems, title, profileHref }: DashboardLayou
             </button>
           )}
 
-          <div className="flex flex-col flex-1 min-w-0">
-            <p className="text-label-sm uppercase tracking-widest text-primary/80 leading-none">
+          <div className="flex items-center flex-1 min-w-0">
+            <h2 className="font-display font-bold text-title-md text-primary truncate">
               {title}
-            </p>
-            <h2 className="font-display font-bold text-title-md text-on-surface truncate leading-tight">
-              {pageTitle}
             </h2>
           </div>
 
@@ -455,7 +443,7 @@ export function CoachLayout() {
       navItems={[
         { label: 'Genel Bakış', href: '/antrenor/panel', icon: LayoutDashboard },
         { label: 'Öğrenciler', href: '/antrenor/ogrenciler', icon: GraduationCap },
-        { label: 'Devamsızlık', href: '/antrenor/devamsizlik', icon: ClipboardCheck },
+        { label: 'Yoklama', href: '/antrenor/devamsizlik', icon: ClipboardCheck },
         { label: 'Sınavlar', href: '/antrenor/sinavlar', icon: Award },
         { label: 'Bildirimler', href: '/antrenor/bildirimler', icon: Bell },
         { label: 'Gruplar', href: '/antrenor/gruplar', icon: Users },

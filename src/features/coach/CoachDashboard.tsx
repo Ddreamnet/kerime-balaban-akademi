@@ -5,7 +5,6 @@ import {
   ClipboardCheck,
   Award,
   CalendarDays,
-  ChevronRight,
   GraduationCap,
 } from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
@@ -15,7 +14,6 @@ import { listActiveClasses } from '@/lib/classes'
 import { useAuth } from '@/hooks/useAuth'
 import { trainingDayLabels } from '@/data/classes'
 import type { TrainingDay } from '@/types/content.types'
-import { cn } from '@/utils/cn'
 
 /**
  * Coach overview — today's class call-out + roster/group counts + shortcuts.
@@ -99,7 +97,7 @@ export function CoachDashboard() {
           <Spinner size="lg" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <StatCard
             icon={GraduationCap}
             label="Öğrenciler"
@@ -118,18 +116,16 @@ export function CoachDashboard() {
       )}
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <QuickAction
           to="/antrenor/devamsizlik"
           icon={ClipboardCheck}
-          title="Devamsızlık Al"
-          description="Bugünkü dersin yoklamasını işaretle"
+          label="Yoklama Al"
         />
         <QuickAction
           to="/antrenor/notlar"
           icon={Award}
-          title="Performans Gir"
-          description="Öğrenci performansını değerlendir"
+          label="Performans Gir"
         />
       </div>
     </div>
@@ -139,32 +135,25 @@ export function CoachDashboard() {
 function QuickAction({
   to,
   icon: Icon,
-  title,
-  description,
+  label,
 }: {
   to: string
   icon: React.ComponentType<{ className?: string }>
-  title: string
-  description: string
+  label: string
 }) {
   return (
     <Link to={to} className="group">
       <PanelCard
         hoverable
-        padding="md"
-        className={cn(
-          'flex items-center gap-3 transition-all duration-200',
-          'hover:bg-primary-tint',
-        )}
+        padding="sm"
+        className="hover:bg-primary-tint transition-colors"
       >
-        <div className="w-10 h-10 rounded-xl bg-primary-container text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-          <Icon className="w-5 h-5" />
+        <div className="flex flex-col items-center gap-2 py-1 text-center">
+          <div className="w-11 h-11 rounded-xl bg-primary-container/80 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Icon className="w-5 h-5" />
+          </div>
+          <span className="text-body-sm font-semibold text-on-surface">{label}</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-display font-semibold text-title-md text-on-surface">{title}</p>
-          <p className="text-body-sm text-on-surface/55">{description}</p>
-        </div>
-        <ChevronRight className="w-4 h-4 text-on-surface/35 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
       </PanelCard>
     </Link>
   )
