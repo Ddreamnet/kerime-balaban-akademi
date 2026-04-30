@@ -105,6 +105,9 @@ export function ParentProfilePage() {
             type="text"
             placeholder="Adınız Soyadınız"
             autoComplete="name"
+            autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
             error={errors.full_name?.message}
             {...register('full_name', {
               required: 'Ad soyad gereklidir.',
@@ -117,6 +120,8 @@ export function ParentProfilePage() {
             type="tel"
             placeholder="+90 5XX XXX XX XX"
             autoComplete="tel"
+            inputMode="tel"
+            autoCorrect="off"
             hint="İletişim ve bildirimler için"
             error={errors.phone?.message}
             {...register('phone')}

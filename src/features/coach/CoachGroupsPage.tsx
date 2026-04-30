@@ -7,6 +7,8 @@ import { Spinner } from '@/components/ui/Spinner'
 import { PageHeader, EmptyState } from '@/components/dashboard'
 import { listActiveClasses } from '@/lib/classes'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
+import { listClassIdsForCoach } from '@/lib/classCoaches'
+import { useAuth } from '@/hooks/useAuth'
 import { beltLevelLabels } from '@/data/classes'
 import type { ClassGroup } from '@/types/content.types'
 import { cn } from '@/utils/cn'
@@ -14,23 +16,31 @@ import { cn } from '@/utils/cn'
 /**
  * Coach: class groups overview.
  * Shows each group with enrolled students, capacity, and schedule.
+ * Sadece koç'un atandığı class'lar listelenir (class_coaches scope).
  */
 export function CoachGroupsPage() {
+  const { user } = useAuth()
   const [classes, setClasses] = useState<ClassGroup[]>([])
   const [children, setChildren] = useState<ChildWithParent[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!user?.id) return
     const load = async () => {
       setIsLoading(true)
-      const [cls, ch] = await Promise.all([listActiveClasses(), listAllChildren()])
-      setClasses(cls)
-      setChildren(ch)
+      const [cls, ch, classIds] = await Promise.all([
+        listActiveClasses(),
+        listAllChildren(),
+        listClassIdsForCoach(user.id),
+      ])
+      const myClassIds = new Set(classIds)
+      setClasses(cls.filter((c) => myClassIds.has(c.id)))
+      setChildren(ch.filter((s) => s.class_group_id !== null && myClassIds.has(s.class_group_id)))
       setIsLoading(false)
     }
     void load()
-  }, [])
+  }, [user?.id])
 
   const childrenByClass = useMemo(() => {
     const map = new Map<string, ChildWithParent[]>()

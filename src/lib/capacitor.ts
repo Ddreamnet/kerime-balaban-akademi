@@ -133,14 +133,12 @@ export const PushNotifications = {
 
     try {
       const existing = await CapPush.checkPermissions()
-      console.info('[push] current permission:', existing.receive)
       if (existing.receive === 'granted') return true
 
       // Always call requestPermissions for any non-granted state. Android
       // shows the system dialog exactly once per install; subsequent calls
       // resolve immediately with the cached answer — cheap and safe.
       const result = await CapPush.requestPermissions()
-      console.info('[push] permission after request:', result.receive)
       if (result.receive !== 'granted') {
         console.warn(
           '[push] permission not granted. If no dialog appeared, the OS has ' +
@@ -167,7 +165,9 @@ export const PushNotifications = {
       const done = (value: string | null, reason: string) => {
         if (settled) return
         settled = true
-        console.info('[push] getToken →', value ? 'got token' : `failed: ${reason}`)
+        if (!value) {
+          console.warn('[push] getToken failed:', reason)
+        }
         void regHandle?.remove()
         void errHandle?.remove()
         resolve(value)
@@ -225,10 +225,7 @@ export const LocalNotifications = {
     body: string
     scheduleAt?: Date
   }): Promise<void> {
-    if (!isNativePlatform()) {
-      console.debug('[LocalNotifications] skipped — running in browser')
-      return
-    }
+    if (!isNativePlatform()) return  // browser'da local notification yok
 
     await CapLocal.schedule({
       notifications: [

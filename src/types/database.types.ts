@@ -63,6 +63,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          lesson_id: string | null
           marked_by: string | null
           notes: string | null
           status: string
@@ -74,6 +75,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          lesson_id?: string | null
           marked_by?: string | null
           notes?: string | null
           status: string
@@ -85,6 +87,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          lesson_id?: string | null
           marked_by?: string | null
           notes?: string | null
           status?: string
@@ -106,6 +109,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "attendance_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "attendance_marked_by_fkey"
             columns: ["marked_by"]
             isOneToOne: false
@@ -113,6 +123,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      branches: {
+        Row: {
+          billing_model: string
+          code: string
+          created_at: string
+          default_package_size: number
+          default_price: number | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          billing_model: string
+          code: string
+          created_at?: string
+          default_package_size?: number
+          default_price?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_model?: string
+          code?: string
+          created_at?: string
+          default_package_size?: number
+          default_price?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       child_coaches: {
         Row: {
@@ -163,6 +212,7 @@ export type Database = {
           belt_level: string | null
           billing_start_date: string | null
           birthday: string | null
+          branch_id: string
           class_group_id: string | null
           coach_note: string | null
           created_at: string
@@ -171,6 +221,7 @@ export type Database = {
           id: string
           license_no: string | null
           notes: string | null
+          package_price_override: number | null
           parent_id: string
           payment_due_day: number | null
           start_date: string | null
@@ -182,6 +233,7 @@ export type Database = {
           belt_level?: string | null
           billing_start_date?: string | null
           birthday?: string | null
+          branch_id: string
           class_group_id?: string | null
           coach_note?: string | null
           created_at?: string
@@ -190,6 +242,7 @@ export type Database = {
           id?: string
           license_no?: string | null
           notes?: string | null
+          package_price_override?: number | null
           parent_id: string
           payment_due_day?: number | null
           start_date?: string | null
@@ -201,6 +254,7 @@ export type Database = {
           belt_level?: string | null
           billing_start_date?: string | null
           birthday?: string | null
+          branch_id?: string
           class_group_id?: string | null
           coach_note?: string | null
           created_at?: string
@@ -209,6 +263,7 @@ export type Database = {
           id?: string
           license_no?: string | null
           notes?: string | null
+          package_price_override?: number | null
           parent_id?: string
           payment_due_day?: number | null
           start_date?: string | null
@@ -216,6 +271,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "children_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "children_class_group_id_fkey"
             columns: ["class_group_id"]
@@ -232,10 +294,54 @@ export type Database = {
           },
         ]
       }
+      class_coaches: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          class_id: string
+          coach_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          class_id: string
+          coach_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          class_id?: string
+          coach_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_coaches_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_coaches_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_coaches_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           age_range: string
           belt_levels: string[]
+          branch_id: string
           capacity: number
           created_at: string
           days: string[]
@@ -252,6 +358,7 @@ export type Database = {
         Insert: {
           age_range?: string
           belt_levels?: string[]
+          branch_id: string
           capacity?: number
           created_at?: string
           days?: string[]
@@ -268,6 +375,7 @@ export type Database = {
         Update: {
           age_range?: string
           belt_levels?: string[]
+          branch_id?: string
           capacity?: number
           created_at?: string
           days?: string[]
@@ -281,7 +389,58 @@ export type Database = {
           time_start?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "classes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_branches: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          branch_id: string
+          coach_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          branch_id: string
+          coach_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          branch_id?: string
+          coach_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_branches_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_branches_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_branches_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       device_tokens: {
         Row: {
@@ -432,6 +591,73 @@ export type Database = {
           },
         ]
       }
+      lessons: {
+        Row: {
+          child_id: string
+          class_id: string
+          created_at: string
+          id: string
+          is_extra: boolean
+          is_telafi: boolean
+          lesson_index: number
+          package_id: string | null
+          scheduled_date: string
+          scheduled_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          class_id: string
+          created_at?: string
+          id?: string
+          is_extra?: boolean
+          is_telafi?: boolean
+          lesson_index: number
+          package_id?: string | null
+          scheduled_date: string
+          scheduled_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          class_id?: string
+          created_at?: string
+          id?: string
+          is_extra?: boolean
+          is_telafi?: boolean
+          lesson_index?: number
+          package_id?: string | null
+          scheduled_date?: string
+          scheduled_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_reads: {
         Row: {
           id: string
@@ -525,6 +751,92 @@ export type Database = {
           },
         ]
       }
+      packages: {
+        Row: {
+          actual_end_date: string | null
+          branch_id: string
+          child_id: string
+          class_id: string | null
+          created_at: string
+          id: string
+          package_number: number
+          payment_id: string | null
+          planned_end_date: string | null
+          price: number | null
+          start_date: string | null
+          status: string
+          telafi_granted: boolean
+          total_slots: number
+          updated_at: string
+          used_slots: number
+        }
+        Insert: {
+          actual_end_date?: string | null
+          branch_id: string
+          child_id: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          package_number: number
+          payment_id?: string | null
+          planned_end_date?: string | null
+          price?: number | null
+          start_date?: string | null
+          status?: string
+          telafi_granted?: boolean
+          total_slots?: number
+          updated_at?: string
+          used_slots?: number
+        }
+        Update: {
+          actual_end_date?: string | null
+          branch_id?: string
+          child_id?: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          package_number?: number
+          payment_id?: string | null
+          planned_end_date?: string | null
+          price?: number | null
+          start_date?: string | null
+          status?: string
+          telafi_granted?: boolean
+          total_slots?: number
+          updated_at?: string
+          used_slots?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number | null
@@ -533,12 +845,13 @@ export type Database = {
           due_date: string
           id: string
           note: string | null
+          package_id: string | null
           paid_at: string | null
           paid_by_id: string | null
-          period_end: string
-          period_month: number
-          period_start: string
-          period_year: number
+          period_end: string | null
+          period_month: number | null
+          period_start: string | null
+          period_year: number | null
           reminder_sent_at: string | null
           status: string
           updated_at: string
@@ -550,12 +863,13 @@ export type Database = {
           due_date: string
           id?: string
           note?: string | null
+          package_id?: string | null
           paid_at?: string | null
           paid_by_id?: string | null
-          period_end: string
-          period_month: number
-          period_start: string
-          period_year: number
+          period_end?: string | null
+          period_month?: number | null
+          period_start?: string | null
+          period_year?: number | null
           reminder_sent_at?: string | null
           status?: string
           updated_at?: string
@@ -567,12 +881,13 @@ export type Database = {
           due_date?: string
           id?: string
           note?: string | null
+          package_id?: string | null
           paid_at?: string | null
           paid_by_id?: string | null
-          period_end?: string
-          period_month?: number
-          period_start?: string
-          period_year?: number
+          period_end?: string | null
+          period_month?: number | null
+          period_start?: string | null
+          period_year?: number | null
           reminder_sent_at?: string | null
           status?: string
           updated_at?: string
@@ -586,6 +901,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_paid_by_id_fkey"
             columns: ["paid_by_id"]
             isOneToOne: false
@@ -593,51 +915,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      products: {
-        Row: {
-          category: string
-          created_at: string
-          description: string
-          id: string
-          image_url: string | null
-          is_available: boolean
-          is_featured: boolean
-          is_inquiry_only: boolean
-          name: string
-          price: number | null
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          description?: string
-          id?: string
-          image_url?: string | null
-          is_available?: boolean
-          is_featured?: boolean
-          is_inquiry_only?: boolean
-          name: string
-          price?: number | null
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string
-          id?: string
-          image_url?: string | null
-          is_available?: boolean
-          is_featured?: boolean
-          is_inquiry_only?: boolean
-          name?: string
-          price?: number | null
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
       }
       performance_photos: {
         Row: {
@@ -739,6 +1016,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          is_available: boolean
+          is_featured: boolean
+          is_inquiry_only: boolean
+          name: string
+          price: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          is_inquiry_only?: boolean
+          name: string
+          price?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          is_inquiry_only?: boolean
+          name?: string
+          price?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -887,8 +1209,220 @@ export type Database = {
           updated_at: string
           whatsapp: string | null
         }
-        Insert: Partial<Database['public']['Tables']['site_content']['Row']>
-        Update: Partial<Database['public']['Tables']['site_content']['Row']>
+        Insert: {
+          about_coach_label?: string | null
+          about_cta_body?: string | null
+          about_cta_headline?: string | null
+          about_cta_primary_label?: string | null
+          about_cta_secondary_label?: string | null
+          about_founded_year?: number | null
+          about_hero_body?: string | null
+          about_hero_headline?: string | null
+          about_hero_highlight?: string | null
+          about_story_headline?: string | null
+          about_story_highlight?: string | null
+          about_story_label?: string | null
+          about_story_paragraphs?: Json | null
+          about_values?: Json | null
+          about_values_body?: string | null
+          about_values_headline?: string | null
+          about_values_highlight?: string | null
+          about_values_label?: string | null
+          academy_stats?: Json | null
+          address?: string | null
+          announcements_hero_body?: string | null
+          announcements_hero_headline?: string | null
+          announcements_hero_highlight?: string | null
+          announcements_hero_label?: string | null
+          class_faqs?: Json | null
+          classes_cta_body?: string | null
+          classes_cta_button_label?: string | null
+          classes_cta_headline?: string | null
+          classes_faq_headline?: string | null
+          classes_faq_highlight?: string | null
+          classes_faq_label?: string | null
+          classes_groups_headline?: string | null
+          classes_groups_highlight?: string | null
+          classes_groups_label?: string | null
+          classes_hero_body?: string | null
+          classes_hero_headline?: string | null
+          classes_hero_highlight?: string | null
+          classes_hero_label?: string | null
+          classes_schedule?: Json | null
+          classes_schedule_body?: string | null
+          classes_schedule_headline?: string | null
+          classes_schedule_highlight?: string | null
+          classes_schedule_label?: string | null
+          coach_bio?: string | null
+          coach_credentials?: Json | null
+          coach_name?: string | null
+          coach_title?: string | null
+          contact_channels_headline?: string | null
+          contact_channels_label?: string | null
+          contact_form_headline?: string | null
+          contact_form_label?: string | null
+          contact_hero_body?: string | null
+          contact_hero_headline?: string | null
+          contact_hours_days?: string | null
+          contact_hours_time?: string | null
+          district?: string | null
+          email?: string | null
+          google_maps_url?: string | null
+          hero_bg_url?: string | null
+          hero_cta_primary_href?: string | null
+          hero_cta_primary_label?: string | null
+          hero_cta_secondary_href?: string | null
+          hero_cta_secondary_label?: string | null
+          hero_headline?: string | null
+          hero_highlight?: string | null
+          hero_subtext?: string | null
+          home_announcements_body?: string | null
+          home_announcements_headline?: string | null
+          home_announcements_highlight?: string | null
+          home_announcements_label?: string | null
+          home_classes_body?: string | null
+          home_classes_headline?: string | null
+          home_classes_highlight?: string | null
+          home_classes_label?: string | null
+          home_classes_link_label?: string | null
+          home_cta_benefits?: Json | null
+          home_cta_body?: string | null
+          home_cta_form_subtitle?: string | null
+          home_cta_form_title?: string | null
+          home_cta_headline?: string | null
+          home_cta_headline_highlight?: string | null
+          home_cta_headline_suffix?: string | null
+          home_cta_label?: string | null
+          home_features_body?: string | null
+          home_features_cards?: Json | null
+          home_features_headline?: string | null
+          home_features_highlight?: string | null
+          home_features_label?: string | null
+          home_hero_overline?: string | null
+          home_products_body?: string | null
+          home_products_headline?: string | null
+          home_products_highlight?: string | null
+          home_products_label?: string | null
+          id?: number
+          instagram?: string | null
+          phone?: string | null
+          products_cta_body?: string | null
+          products_cta_button_label?: string | null
+          products_cta_headline?: string | null
+          products_hero_body?: string | null
+          products_hero_headline?: string | null
+          products_hero_highlight?: string | null
+          products_hero_label?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          about_coach_label?: string | null
+          about_cta_body?: string | null
+          about_cta_headline?: string | null
+          about_cta_primary_label?: string | null
+          about_cta_secondary_label?: string | null
+          about_founded_year?: number | null
+          about_hero_body?: string | null
+          about_hero_headline?: string | null
+          about_hero_highlight?: string | null
+          about_story_headline?: string | null
+          about_story_highlight?: string | null
+          about_story_label?: string | null
+          about_story_paragraphs?: Json | null
+          about_values?: Json | null
+          about_values_body?: string | null
+          about_values_headline?: string | null
+          about_values_highlight?: string | null
+          about_values_label?: string | null
+          academy_stats?: Json | null
+          address?: string | null
+          announcements_hero_body?: string | null
+          announcements_hero_headline?: string | null
+          announcements_hero_highlight?: string | null
+          announcements_hero_label?: string | null
+          class_faqs?: Json | null
+          classes_cta_body?: string | null
+          classes_cta_button_label?: string | null
+          classes_cta_headline?: string | null
+          classes_faq_headline?: string | null
+          classes_faq_highlight?: string | null
+          classes_faq_label?: string | null
+          classes_groups_headline?: string | null
+          classes_groups_highlight?: string | null
+          classes_groups_label?: string | null
+          classes_hero_body?: string | null
+          classes_hero_headline?: string | null
+          classes_hero_highlight?: string | null
+          classes_hero_label?: string | null
+          classes_schedule?: Json | null
+          classes_schedule_body?: string | null
+          classes_schedule_headline?: string | null
+          classes_schedule_highlight?: string | null
+          classes_schedule_label?: string | null
+          coach_bio?: string | null
+          coach_credentials?: Json | null
+          coach_name?: string | null
+          coach_title?: string | null
+          contact_channels_headline?: string | null
+          contact_channels_label?: string | null
+          contact_form_headline?: string | null
+          contact_form_label?: string | null
+          contact_hero_body?: string | null
+          contact_hero_headline?: string | null
+          contact_hours_days?: string | null
+          contact_hours_time?: string | null
+          district?: string | null
+          email?: string | null
+          google_maps_url?: string | null
+          hero_bg_url?: string | null
+          hero_cta_primary_href?: string | null
+          hero_cta_primary_label?: string | null
+          hero_cta_secondary_href?: string | null
+          hero_cta_secondary_label?: string | null
+          hero_headline?: string | null
+          hero_highlight?: string | null
+          hero_subtext?: string | null
+          home_announcements_body?: string | null
+          home_announcements_headline?: string | null
+          home_announcements_highlight?: string | null
+          home_announcements_label?: string | null
+          home_classes_body?: string | null
+          home_classes_headline?: string | null
+          home_classes_highlight?: string | null
+          home_classes_label?: string | null
+          home_classes_link_label?: string | null
+          home_cta_benefits?: Json | null
+          home_cta_body?: string | null
+          home_cta_form_subtitle?: string | null
+          home_cta_form_title?: string | null
+          home_cta_headline?: string | null
+          home_cta_headline_highlight?: string | null
+          home_cta_headline_suffix?: string | null
+          home_cta_label?: string | null
+          home_features_body?: string | null
+          home_features_cards?: Json | null
+          home_features_headline?: string | null
+          home_features_highlight?: string | null
+          home_features_label?: string | null
+          home_hero_overline?: string | null
+          home_products_body?: string | null
+          home_products_headline?: string | null
+          home_products_highlight?: string | null
+          home_products_label?: string | null
+          id?: number
+          instagram?: string | null
+          phone?: string | null
+          products_cta_body?: string | null
+          products_cta_button_label?: string | null
+          products_cta_headline?: string | null
+          products_hero_body?: string | null
+          products_hero_headline?: string | null
+          products_hero_highlight?: string | null
+          products_hero_label?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
         Relationships: []
       }
       student_notes: {
@@ -950,9 +1484,45 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      active_package_for_child: {
+        Args: { p_child_id: string }
+        Returns: string
+      }
+      append_lesson: {
+        Args: { p_kind: string; p_package_id: string }
+        Returns: string
+      }
+      cancel_class_lesson: {
+        Args: { p_class_id: string; p_date: string }
+        Returns: number
+      }
+      clamp_day_to_month: {
+        Args: { p_day: number; p_month: number; p_year: number }
+        Returns: string
+      }
+      compute_package_price: { Args: { p_child_id: string }; Returns: number }
       confirm_user_email: { Args: { user_id: string }; Returns: undefined }
+      dow_to_turkish: { Args: { p_date: string }; Returns: string }
+      generate_package_lessons: {
+        Args: { p_count?: number; p_package_id: string; p_start_date?: string }
+        Returns: undefined
+      }
+      generate_payment_periods: {
+        Args: {
+          p_child_id: string
+          p_count?: number
+          p_due_day: number
+          p_start_date: string
+        }
+        Returns: undefined
+      }
       is_admin: { Args: { uid: string }; Returns: boolean }
       is_coach: { Args: { uid: string }; Returns: boolean }
+      trigger_attendance_missing: { Args: never; Returns: undefined }
+      trigger_birthday_notifications: { Args: never; Returns: undefined }
+      trigger_lesson_reminder: { Args: never; Returns: undefined }
+      trigger_package_inactive: { Args: never; Returns: undefined }
+      trigger_payment_reminders: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
@@ -964,6 +1534,7 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
@@ -994,3 +1565,93 @@ export type Tables<
       ? R
       : never
     : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { User, UserCog, Clock, CheckCircle2 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
-import { Section } from '@/components/layout/Section'
+import { PanelBackdrop } from '@/components/layout/PanelBackdrop'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -59,17 +59,16 @@ export function RegisterPage() {
   }
 
   return (
-    <Section bg="default" className="min-h-[calc(100dvh-4rem)] flex items-center py-12">
-      <Container narrow>
-        <div className="flex flex-col items-center gap-6">
-          <div className="text-center">
-            <h1 className="font-display font-bold text-headline-lg text-on-surface">
-              Kayıt Ol
-            </h1>
-            <p className="text-body-md text-on-surface/60 mt-1">
-              Hesap oluşturun
-            </p>
-          </div>
+    <AuthShell>
+      <div className="flex flex-col items-center gap-6">
+        <div className="text-center">
+          <h1 className="font-display font-bold text-headline-lg text-on-surface">
+            Kayıt Ol
+          </h1>
+          <p className="text-body-md text-on-surface/60 mt-1">
+            Hesap oluşturun
+          </p>
+        </div>
 
           <Card className="w-full">
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
@@ -104,6 +103,10 @@ export function RegisterPage() {
                 type="text"
                 placeholder="Adınız Soyadınız"
                 autoComplete="name"
+                autoCapitalize="words"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="next"
                 error={errors.full_name?.message}
                 {...register('full_name', {
                   required: 'Ad soyad gereklidir.',
@@ -116,6 +119,11 @@ export function RegisterPage() {
                 type="email"
                 placeholder="ornek@email.com"
                 autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                inputMode="email"
+                spellCheck={false}
+                enterKeyHint="next"
                 error={errors.email?.message}
                 {...register('email', {
                   required: 'E-posta adresi gereklidir.',
@@ -131,9 +139,18 @@ export function RegisterPage() {
                 type="tel"
                 placeholder="+90 5XX XXX XX XX"
                 autoComplete="tel"
+                inputMode="tel"
+                autoCorrect="off"
+                enterKeyHint="next"
                 hint="İletişim ve bildirimler için"
                 error={errors.phone?.message}
-                {...register('phone', { required: 'Telefon numarası gereklidir.' })}
+                {...register('phone', {
+                  required: 'Telefon numarası gereklidir.',
+                  pattern: {
+                    value: /^[+0-9\s()-]{7,20}$/,
+                    message: 'Geçerli bir telefon numarası girin.',
+                  },
+                })}
               />
 
               <Input
@@ -141,6 +158,7 @@ export function RegisterPage() {
                 type="password"
                 placeholder="En az 6 karakter"
                 autoComplete="new-password"
+                enterKeyHint="next"
                 error={errors.password?.message}
                 {...register('password', {
                   required: 'Şifre gereklidir.',
@@ -153,6 +171,7 @@ export function RegisterPage() {
                 type="password"
                 placeholder="Şifrenizi tekrar girin"
                 autoComplete="new-password"
+                enterKeyHint="done"
                 error={errors.password_confirm?.message}
                 {...register('password_confirm', {
                   required: 'Şifre tekrarı gereklidir.',
@@ -196,15 +215,25 @@ export function RegisterPage() {
             </Link>
           </p>
 
-          <Link
-            to="/"
-            className="text-body-sm text-on-surface/40 hover:text-on-surface/70 transition-colors"
-          >
-            ← Anasayfaya dön
-          </Link>
-        </div>
+        <Link
+          to="/"
+          className="text-body-sm text-on-surface/40 hover:text-on-surface/70 transition-colors"
+        >
+          ← Anasayfaya dön
+        </Link>
+      </div>
+    </AuthShell>
+  )
+}
+
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative min-h-[calc(100dvh-4rem)] flex items-center overflow-hidden isolate py-12">
+      <PanelBackdrop variant="absolute" />
+      <Container narrow className="relative z-10">
+        {children}
       </Container>
-    </Section>
+    </div>
   )
 }
 
@@ -275,9 +304,8 @@ function RoleOption({
 
 function SuccessScreen({ needsEmail }: { needsEmail: boolean }) {
   return (
-    <Section bg="default" className="min-h-[calc(100dvh-4rem)] flex items-center">
-      <Container narrow>
-        <Card className="flex flex-col items-center gap-5 py-12 text-center">
+    <AuthShell>
+      <Card className="flex flex-col items-center gap-5 py-12 text-center">
           <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center">
             <CheckCircle2 className="w-8 h-8 text-green-600" />
           </div>
@@ -314,8 +342,7 @@ function SuccessScreen({ needsEmail }: { needsEmail: boolean }) {
               Anasayfaya dön
             </Link>
           </div>
-        </Card>
-      </Container>
-    </Section>
+      </Card>
+    </AuthShell>
   )
 }

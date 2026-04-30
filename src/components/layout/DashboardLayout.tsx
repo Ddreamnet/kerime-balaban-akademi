@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Megaphone,
   CalendarDays,
+  Building2,
   ShoppingBag,
   CreditCard,
   ClipboardCheck,
@@ -280,11 +281,11 @@ export function DashboardLayout({ navItems, title, profileHref }: DashboardLayou
       <div className="fixed top-0 left-0 right-0 z-30 lg:hidden bg-surface-card/95 backdrop-blur-md shadow-ambient-sm pt-safe pl-safe pr-safe">
         {/* Hairline wine beam below the top bar — subtle "this is the panel" mark */}
         <div className="panel-wine-beam bottom-0 left-0 right-0" aria-hidden="true" />
-        <div className="flex items-center gap-2 px-3 py-2.5">
+        <div className="flex items-center gap-2 px-3 py-1.5">
           {!isRootPanel ? (
             <button
               onClick={handleBack}
-              className="flex items-center justify-center w-10 h-10 rounded-xl text-on-surface/60 hover:text-primary hover:bg-primary/5 transition-colors"
+              className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface/60 hover:text-primary hover:bg-primary/5 transition-colors"
               aria-label="Geri"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -292,7 +293,7 @@ export function DashboardLayout({ navItems, title, profileHref }: DashboardLayou
           ) : (
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl text-on-surface/60 hover:text-primary hover:bg-primary/5 transition-colors"
+              className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface/60 hover:text-primary hover:bg-primary/5 transition-colors"
               aria-label="Menü"
             >
               <Menu className="w-5 h-5" />
@@ -308,7 +309,7 @@ export function DashboardLayout({ navItems, title, profileHref }: DashboardLayou
           {!isRootPanel && (
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl text-on-surface/60 hover:text-primary hover:bg-primary/5 transition-colors"
+              className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface/60 hover:text-primary hover:bg-primary/5 transition-colors"
               aria-label="Menü"
             >
               <Menu className="w-5 h-5" />
@@ -355,7 +356,7 @@ export function DashboardLayout({ navItems, title, profileHref }: DashboardLayou
               </NavLink>
               <button
                 onClick={() => setMobileNavOpen(false)}
-                className="flex items-center justify-center w-10 h-10 rounded-xl text-on-surface/60 hover:text-on-surface hover:bg-surface-low transition-colors shrink-0"
+                className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface/60 hover:text-on-surface hover:bg-surface-low transition-colors shrink-0"
                 aria-label="Kapat"
               >
                 <X className="w-5 h-5" />
@@ -422,6 +423,7 @@ export function AdminLayout() {
         { label: 'Onay Bekleyenler', href: '/admin/onaylar', icon: UserCheck },
         { label: 'Antrenörler', href: '/admin/antrenorler', icon: UserCog },
         { label: 'Üyeler', href: '/admin/uyeler', icon: Users },
+        { label: 'Branşlar', href: '/admin/branslar', icon: Building2 },
         { label: 'Duyurular', href: '/admin/duyurular', icon: Megaphone },
         { label: 'Dersler', href: '/admin/dersler', icon: CalendarDays },
         { label: 'Ürünler', href: '/admin/urunler', icon: ShoppingBag },

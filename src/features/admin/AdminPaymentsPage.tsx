@@ -21,15 +21,19 @@ import {
   listPaymentsDueBetween,
   updatePaymentById,
   derivePaymentStatus,
+  derivePaymentKind,
   daysUntilDue,
   formatPeriodRange,
+  formatPaymentLabel,
   formatDate,
   DERIVED_PAYMENT_STATUS_LABELS,
   type PaymentRecord,
   type DerivedPaymentStatus,
+  type PaymentKind,
 } from '@/lib/payments'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { formatCurrency, whatsappUrl } from '@/utils/format'
+import { formatCurrency, todayIsoTrt, whatsappUrl } from '@/utils/format'
 import { cn } from '@/utils/cn'
 
 type FilterStatus = 'all' | 'pending' | 'overdue' | 'paid'
@@ -40,6 +44,8 @@ interface RowData {
   child: ChildWithParent
   derived: DerivedPaymentStatus
   daysUntil: number
+  kind: PaymentKind
+  packageNumber: number | null
 }
 
 const RANGE_LABELS: Record<RangePreset, string> = {
@@ -59,16 +65,18 @@ export function AdminPaymentsPage() {
   const { user } = useAuth()
   const [children, setChildren] = useState<ChildWithParent[]>([])
   const [payments, setPayments] = useState<PaymentRecord[]>([])
+  const [packageNumberMap, setPackageNumberMap] = useState<Map<string, number>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [range, setRange] = useState<RangePreset>('month')
+  const [kindTab, setKindTab] = useState<PaymentKind>('monthly')
   const [search, setSearch] = useState('')
   const [actioningId, setActioningId] = useState<string | null>(null)
   // Edit popover state — single row at a time.
   const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
 
-  const todayIso = new Date().toISOString().slice(0, 10)
+  const todayIso = todayIsoTrt()
   const rangeEndIso = useMemo(() => {
     const d = new Date()
     if (range === 'week') d.setDate(d.getDate() + 7)
@@ -98,7 +106,25 @@ export function AdminPaymentsPage() {
       if (p.status !== 'paid') merged.set(p.id, p)
     })
     setChildren(ch)
-    setPayments(Array.from(merged.values()))
+    const allPayments = Array.from(merged.values())
+    setPayments(allPayments)
+
+    // Paket invoice'lar için package_number lookup
+    const packageIds = allPayments
+      .map((p) => p.package_id)
+      .filter((id): id is string => id !== null)
+    if (packageIds.length > 0) {
+      const { data: pkgs } = await supabase
+        .from('packages')
+        .select('id, package_number')
+        .in('id', packageIds)
+      const m = new Map<string, number>()
+      for (const row of (pkgs ?? []) as { id: string; package_number: number }[]) {
+        m.set(row.id, row.package_number)
+      }
+      setPackageNumberMap(m)
+    }
+
     setIsLoading(false)
   }
 
@@ -124,6 +150,8 @@ export function AdminPaymentsPage() {
           child,
           derived: derivePaymentStatus(p, now),
           daysUntil: daysUntilDue(p.due_date, now),
+          kind: derivePaymentKind(p),
+          packageNumber: p.package_id ? packageNumberMap.get(p.package_id) ?? null : null,
         }
       })
       .filter((r): r is RowData => r !== null)
@@ -133,26 +161,33 @@ export function AdminPaymentsPage() {
         if (a.derived !== 'overdue' && b.derived === 'overdue') return 1
         return a.payment.due_date.localeCompare(b.payment.due_date)
       })
-  }, [payments, childById])
+  }, [payments, childById, packageNumberMap])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return rows.filter((r) => {
+      if (r.kind !== kindTab) return false
       if (filterStatus !== 'all' && r.derived !== filterStatus) return false
       if (q && !r.child.full_name.toLowerCase().includes(q)) return false
       return true
     })
-  }, [rows, filterStatus, search])
+  }, [rows, filterStatus, search, kindTab])
 
   const counts = useMemo(() => {
-    const overdue = rows.filter((r) => r.derived === 'overdue').length
-    const pending = rows.filter((r) => r.derived === 'pending').length
-    const paid = rows.filter((r) => r.derived === 'paid').length
-    const dueThisWeek = rows.filter(
+    const tabRows = rows.filter((r) => r.kind === kindTab)
+    const overdue = tabRows.filter((r) => r.derived === 'overdue').length
+    const pending = tabRows.filter((r) => r.derived === 'pending').length
+    const paid = tabRows.filter((r) => r.derived === 'paid').length
+    const dueThisWeek = tabRows.filter(
       (r) => r.derived === 'pending' && r.daysUntil >= 0 && r.daysUntil <= 7,
     ).length
     return { overdue, pending, paid, dueThisWeek }
-  }, [rows])
+  }, [rows, kindTab])
+
+  const tabCounts = useMemo(() => ({
+    monthly: rows.filter((r) => r.kind === 'monthly').length,
+    package: rows.filter((r) => r.kind === 'package').length,
+  }), [rows])
 
   const handleMarkPaid = async (row: RowData, amount?: number | null) => {
     if (!user) return
@@ -197,8 +232,29 @@ export function AdminPaymentsPage() {
       <PageHeader
         kicker="Yönetici Paneli"
         title="Ödemeler"
-        description="Vadesi yaklaşan ve geciken ödemeler. Her öğrencinin kendi aylık döngüsü vardır."
+        description="Vadesi yaklaşan ve geciken ödemeler. Aylık (taekwondo) ve paket (kickboks/cimnastik) ayrı sekmelerde."
       />
+
+      {/* Tip sekmesi */}
+      <div className="flex gap-2 border-b border-surface-low">
+        {(['monthly', 'package'] as PaymentKind[]).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setKindTab(k)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold transition-colors',
+              'border-b-2 -mb-px min-h-touch',
+              kindTab === k
+                ? 'text-primary border-primary'
+                : 'text-on-surface/60 border-transparent hover:text-on-surface',
+            )}
+          >
+            {k === 'monthly' ? 'Aylık' : 'Paket'}
+            <span className="text-label-sm opacity-65">({tabCounts[k]})</span>
+          </button>
+        ))}
+      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -334,10 +390,15 @@ function PaymentRowCard({
 }) {
   const { payment, child, derived, daysUntil } = row
 
+  const labelText =
+    row.kind === 'package'
+      ? formatPaymentLabel(payment, row.packageNumber)
+      : formatPeriodRange(payment.period_start, payment.period_end)
+
   const whatsapp = child.parent_phone
     ? whatsappUrl(
         child.parent_phone,
-        `Merhaba ${child.parent_name}, ${child.full_name} için ${formatPeriodRange(payment.period_start, payment.period_end)} dönemine ait ${formatDate(payment.due_date)} vadeli ödeme hatırlatması.`,
+        `Merhaba ${child.parent_name}, ${child.full_name} için ${labelText} ödemesinin ${formatDate(payment.due_date)} vadesi yaklaşıyor.`,
       )
     : null
 
@@ -381,9 +442,7 @@ function PaymentRowCard({
             </Link>
             <StatusBadge derived={derived} />
           </div>
-          <p className="text-body-sm text-on-surface/60 mt-0.5">
-            {formatPeriodRange(payment.period_start, payment.period_end)}
-          </p>
+          <p className="text-body-sm text-on-surface/60 mt-0.5">{labelText}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-body-sm">
             <span
               className={cn(
@@ -469,6 +528,8 @@ function PaymentRowCard({
               type="number"
               min={0}
               step="any"
+              inputMode="decimal"
+              enterKeyHint="done"
               value={editAmount}
               onChange={(e) => onEditAmountChange(e.target.value)}
               placeholder="Boş bırakılabilir"

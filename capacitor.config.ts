@@ -22,7 +22,9 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     Keyboard: {
-      resize: 'body',
+      // 'native': iOS Safari'nin focus+scroll davranışını native handle eder.
+      // 'body' eskiden vardı ama input scrollIntoView'da bug çıkarıyordu.
+      resize: 'native',
       resizeOnFullScreen: true,
     },
   },

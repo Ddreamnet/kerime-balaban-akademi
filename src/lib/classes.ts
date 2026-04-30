@@ -17,6 +17,8 @@ export interface ClassInput {
   instructor: string
   is_active?: boolean
   sort_order?: number
+  /** NOT NULL after Faz 1+2 — yeni class oluşturmada zorunlu. */
+  branch_id?: string
 }
 
 function mapClass(row: {
@@ -31,6 +33,7 @@ function mapClass(row: {
   capacity: number
   instructor: string
   is_active: boolean
+  branch_id?: string | null
 }): ClassGroup {
   return {
     id: row.id,
@@ -44,6 +47,7 @@ function mapClass(row: {
     capacity: row.capacity,
     instructor: row.instructor,
     is_active: row.is_active,
+    branch_id: row.branch_id ?? '',
   }
 }
 
@@ -84,6 +88,10 @@ export async function getClassById(id: string): Promise<ClassGroup | null> {
 export async function createClass(
   input: ClassInput,
 ): Promise<{ classGroup: ClassGroup | null; error: string | null }> {
+  if (!input.branch_id) {
+    return { classGroup: null, error: 'Branş seçimi zorunludur.' }
+  }
+
   const { data, error } = await supabase
     .from('classes')
     .insert({
@@ -98,6 +106,7 @@ export async function createClass(
       instructor: input.instructor,
       is_active: input.is_active ?? true,
       sort_order: input.sort_order ?? 0,
+      branch_id: input.branch_id,
     })
     .select('*')
     .single()
@@ -124,6 +133,7 @@ export async function updateClass(
       ...(input.instructor !== undefined && { instructor: input.instructor }),
       ...(input.is_active !== undefined && { is_active: input.is_active }),
       ...(input.sort_order !== undefined && { sort_order: input.sort_order }),
+      ...(input.branch_id !== undefined && { branch_id: input.branch_id }),
     })
     .eq('id', id)
     .select('*')

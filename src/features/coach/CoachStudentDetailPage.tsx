@@ -21,6 +21,7 @@ import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { supabase } from '@/lib/supabase'
 import { updateChild, type Child } from '@/lib/children'
 import { listActiveClasses } from '@/lib/classes'
+import { listClassIdsForCoach } from '@/lib/classCoaches'
 import {
   deleteRecord,
   listRecordsForChild,
@@ -102,6 +103,17 @@ export function CoachStudentDetailPage() {
         return
       }
 
+      // Yetki kontrolü: koç sadece atandığı class'lardaki öğrencileri görür/edit eder.
+      if (user?.id && user.role === 'coach') {
+        const myClassIds = new Set(await listClassIdsForCoach(user.id))
+        const childClassId = data.class_group_id as string | null
+        if (!childClassId || !myClassIds.has(childClassId)) {
+          setNotFound(true)
+          setIsLoading(false)
+          return
+        }
+      }
+
       const cls = await listActiveClasses()
       setClasses(cls)
 
@@ -122,6 +134,9 @@ export function CoachStudentDetailPage() {
         full_name: data.full_name,
         birthday: data.birthday,
         class_group_id: data.class_group_id,
+        branch_id: (data as { branch_id?: string }).branch_id ?? '',
+        package_price_override:
+          (data as { package_price_override?: number | null }).package_price_override ?? null,
         belt_level: data.belt_level as Child['belt_level'],
         avatar_url: data.avatar_url,
         notes: data.notes,

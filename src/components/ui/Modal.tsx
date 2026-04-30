@@ -48,19 +48,58 @@ export function Modal({
   hideClose = false,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const previousActiveElement = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
 
+    // Modal açılınca odağı önceki element'ten kaydet, kapanırken geri ver.
+    previousActiveElement.current = document.activeElement as HTMLElement | null
+
+    // Modal'ın ilk odaklanabilir element'ine (genelde ilk input ya da kapat
+    // butonu) odağı al — klavye kullanıcılarının modal içine girmesi için.
+    const focusFirst = () => {
+      if (!dialogRef.current) return
+      const focusable = dialogRef.current.querySelector<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      focusable?.focus()
+    }
+    // Render'dan sonra odakla (animasyon başında değil).
+    const t = setTimeout(focusFirst, 50)
+
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      // Tab focus trap: panel dışına çıkışı engelle.
+      if (e.key === 'Tab' && dialogRef.current) {
+        const nodes = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )
+        if (nodes.length === 0) return
+        const first = nodes[0]
+        const last = nodes[nodes.length - 1]
+        const active = document.activeElement as HTMLElement | null
+        if (e.shiftKey && active === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
     document.addEventListener('keydown', handleKey)
     document.body.style.overflow = 'hidden'
 
     return () => {
+      clearTimeout(t)
       document.removeEventListener('keydown', handleKey)
       document.body.style.overflow = ''
+      // Modal kapanınca odağı önceki yere döndür (örn. modal'ı açan butona).
+      previousActiveElement.current?.focus?.()
     }
   }, [isOpen, onClose])
 
@@ -143,7 +182,7 @@ export function Modal({
                 type="button"
                 onClick={onClose}
                 aria-label="Kapat"
-                className="relative z-10 w-9 h-9 rounded-full text-on-surface/55 hover:text-on-surface hover:bg-surface-low flex items-center justify-center transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-primary"
+                className="relative z-10 w-11 h-11 rounded-full text-on-surface/55 hover:text-on-surface hover:bg-surface-low flex items-center justify-center transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-primary"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -154,9 +193,9 @@ export function Modal({
         {/* Body */}
         <div className="overflow-y-auto px-5 sm:px-6 pt-1 pb-5">{children}</div>
 
-        {/* Footer */}
+        {/* Footer — pb-safe ile home indicator overlap'i engellenir */}
         {footer && (
-          <div className="shrink-0 border-t border-surface-low/80 bg-surface-card/80 backdrop-blur px-5 sm:px-6 py-3 flex flex-wrap items-center justify-end gap-2">
+          <div className="shrink-0 border-t border-surface-low/80 bg-surface-card/80 backdrop-blur px-5 sm:px-6 py-3 pb-safe sm:pb-3 flex flex-wrap items-center justify-end gap-2">
             {footer}
           </div>
         )}

@@ -276,6 +276,42 @@ export async function updatePassword(
   return { error: null }
 }
 
+// ─── Password reset (forgot password) ───────────────────────────────────────
+
+/**
+ * Şifre sıfırlama e-postası gönderir. Kullanıcı email'deki linke tıklayınca
+ * `/sifre-sifirla` sayfasına yönlenir, oradaki form yeni şifreyi `updateUser`
+ * ile yazar.
+ *
+ * redirectTo: production'da `VITE_PUBLIC_SITE_URL` (web), mobile'da
+ * window.location.origin yedeği. Email confirmation linki universal link
+ * olarak da çalışacaksa Supabase Auth ayarlarında additional redirect URLs'e
+ * eklenmeli.
+ */
+export async function requestPasswordReset(email: string): Promise<{ error: string | null }> {
+  const siteUrl =
+    (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined) ||
+    window.location.origin
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/sifre-sifirla`,
+  })
+  if (error) return { error: mapAuthError(error.message) }
+  return { error: null }
+}
+
+/**
+ * Şifre sıfırlama akışında kullanıcı email linkine tıklayıp /sifre-sifirla
+ * sayfasına geldiğinde Supabase otomatik bir recovery session başlatır.
+ * Bu session aktifken updateUser ile yeni şifre yazılır.
+ */
+export async function setNewPassword(
+  newPassword: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) return { error: mapAuthError(error.message) }
+  return { error: null }
+}
+
 // Re-export helper for component consumers
 export { isFullyActive }
 

@@ -9,13 +9,17 @@ import {
   Users as UsersIcon,
   BarChart3,
   CalendarDays,
+  XCircle,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Modal } from '@/components/ui/Modal'
 import { Spinner } from '@/components/ui/Spinner'
 import { listAllClasses } from '@/lib/classes'
+import { listActiveBranches, type Branch } from '@/lib/branches'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
+import { cancelClassLesson } from '@/lib/lessons'
 import {
   getAttendanceByRange,
   computeStats,
@@ -26,19 +30,29 @@ import {
 import type { ClassGroup } from '@/types/content.types'
 import { PageHeader } from '@/components/dashboard'
 import { cn } from '@/utils/cn'
-import { formatDateLong, formatDateShort } from '@/utils/format'
+import { formatDateLong, formatDateShort, todayIsoTrt } from '@/utils/format'
 
 type ViewMode = 'daily' | 'summary'
 
 export function AdminAttendancePage() {
   const [classes, setClasses] = useState<ClassGroup[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
   const [allChildren, setAllChildren] = useState<ChildWithParent[]>([])
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
+  const [date, setDate] = useState(() => todayIsoTrt())
   const [records, setRecords] = useState<AttendanceRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRecordsLoading, setIsRecordsLoading] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('daily')
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
+
+  const branchById = useMemo(() => new Map(branches.map((b) => [b.id, b])), [branches])
+  const visibleClasses = useMemo(
+    () => (selectedBranchId ? classes.filter((c) => c.branch_id === selectedBranchId) : classes),
+    [classes, selectedBranchId],
+  )
 
   // 30-day range for summary view
   const summaryRange = useMemo(() => {
@@ -51,17 +65,49 @@ export function AdminAttendancePage() {
     }
   }, [])
 
-  // Load classes + children once
+  // Load classes + children + branches once
   useEffect(() => {
     const load = async () => {
       setIsLoading(true)
-      const [cls, ch] = await Promise.all([listAllClasses(), listAllChildren()])
+      const [cls, ch, brs] = await Promise.all([
+        listAllClasses(),
+        listAllChildren(),
+        listActiveBranches(),
+      ])
       setClasses(cls)
       setAllChildren(ch)
+      setBranches(brs)
       setIsLoading(false)
     }
     void load()
   }, [])
+
+  // Branş değişince geçerliliği kalmayan class seçimini sıfırla
+  useEffect(() => {
+    if (selectedClassId && !visibleClasses.some((c) => c.id === selectedClassId)) {
+      setSelectedClassId(null)
+    }
+  }, [selectedClassId, visibleClasses])
+
+  const selectedClass = classes.find((c) => c.id === selectedClassId) ?? null
+
+  const handleCancelLesson = async () => {
+    if (!selectedClassId) return
+    setIsCancelling(true)
+    const { count, error } = await cancelClassLesson(selectedClassId, date)
+    setIsCancelling(false)
+    setShowCancelConfirm(false)
+    if (error) {
+      alert(`İptal başarısız: ${error}`)
+      return
+    }
+    alert(`${count} öğrenci için ders iptal edildi (mazeretli işaretlendi).`)
+    // refetch
+    if (viewMode === 'daily') {
+      const list = await getAttendanceByRange(date, date, selectedClassId)
+      setRecords(list)
+    }
+  }
 
   // Load attendance records when filters change
   useEffect(() => {
@@ -195,7 +241,7 @@ export function AdminAttendancePage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setDate(new Date().toISOString().split('T')[0])}
+                onClick={() => setDate(todayIsoTrt())}
                 className="text-body-sm"
               >
                 Bugüne dön
@@ -209,6 +255,40 @@ export function AdminAttendancePage() {
           <div className="flex items-center gap-2 justify-center text-body-sm text-on-surface/60">
             <CalendarDays className="w-4 h-4" />
             {formatDateShort(summaryRange.start)} — {formatDateShort(summaryRange.end)}
+          </div>
+        )}
+
+        {/* Branş filter — birden fazla branş varsa */}
+        {branches.length > 1 && (
+          <div className="flex flex-col gap-2 pt-2 border-t border-surface-low">
+            <span className="text-label-md text-on-surface/80 font-medium">Branş</span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedBranchId(null)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-label-md font-semibold transition-colors',
+                  !selectedBranchId
+                    ? 'bg-primary text-white'
+                    : 'bg-surface-low text-on-surface/65 hover:bg-surface-high',
+                )}
+              >
+                Tüm Branşlar
+              </button>
+              {branches.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => setSelectedBranchId(b.id)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-label-md font-semibold transition-colors',
+                    selectedBranchId === b.id
+                      ? 'bg-primary text-white'
+                      : 'bg-surface-low text-on-surface/65 hover:bg-surface-high',
+                  )}
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -227,23 +307,88 @@ export function AdminAttendancePage() {
             >
               Tümü
             </button>
-            {classes.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setSelectedClassId(c.id)}
-                className={cn(
-                  'px-3 py-2 rounded-lg text-body-sm font-semibold transition-colors',
-                  selectedClassId === c.id
-                    ? 'bg-primary text-white'
-                    : 'bg-surface-low text-on-surface/70 hover:bg-surface-high',
-                )}
-              >
-                {c.name}
-              </button>
-            ))}
+            {visibleClasses.map((c) => {
+              const branchName = branchById.get(c.branch_id)?.name
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedClassId(c.id)}
+                  className={cn(
+                    'px-3 py-2 rounded-lg text-body-sm font-semibold transition-colors',
+                    selectedClassId === c.id
+                      ? 'bg-primary text-white'
+                      : 'bg-surface-low text-on-surface/70 hover:bg-surface-high',
+                  )}
+                >
+                  {c.name}
+                  {!selectedBranchId && branchName && (
+                    <span
+                      className={cn(
+                        'ml-1.5 text-[10px] uppercase tracking-wider opacity-80',
+                        selectedClassId === c.id ? 'text-white/80' : 'text-on-surface/50',
+                      )}
+                    >
+                      {branchName}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
+
+        {/* Class-level cancel — daily view + class seçili */}
+        {viewMode === 'daily' && selectedClass && (
+          <div className="flex items-center gap-2 pt-2 border-t border-surface-low">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCancelConfirm(true)}
+              className="text-wine hover:bg-wine/5"
+            >
+              <XCircle className="w-4 h-4" />
+              Bu dersi iptal et
+            </Button>
+            <span className="text-label-sm text-on-surface/45">
+              Sınıftaki tüm öğrenciler mazeretli, paket öğrencilerinin paket bitişi 1 ders uzar.
+            </span>
+          </div>
+        )}
       </Card>
+
+      {/* Cancel confirm */}
+      {showCancelConfirm && selectedClass && (
+        <Modal
+          isOpen={true}
+          onClose={() => setShowCancelConfirm(false)}
+          title="Dersi İptal Et"
+          icon={XCircle}
+        >
+          <div className="flex flex-col gap-4">
+            <p className="text-body-md text-on-surface">
+              <strong>{formatDateLong(date)}</strong> tarihli{' '}
+              <strong>{selectedClass.name}</strong> dersini iptal etmek istediğinden emin misin?
+            </p>
+            <div className="bg-surface-low rounded-lg p-4 text-body-sm text-on-surface/70 flex flex-col gap-1.5">
+              <p>• Sınıftaki tüm öğrenciler için yoklama mazeretli işaretlenir.</p>
+              <p>• Paket öğrencilerinin paket bitişine birer ders eklenir.</p>
+              <p>• Velilere otomatik bildirim gider.</p>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                onClick={() => setShowCancelConfirm(false)}
+                disabled={isCancelling}
+              >
+                Vazgeç
+              </Button>
+              <Button variant="primary" onClick={handleCancelLesson} loading={isCancelling}>
+                Evet, İptal Et
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Loading */}
       {(isLoading || isRecordsLoading) && (

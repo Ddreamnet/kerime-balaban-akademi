@@ -222,10 +222,7 @@ export const TARGET_LABELS: Record<NotificationTarget, string> = {
  * No-op on web.
  */
 export async function registerPushForUser(userId: string): Promise<void> {
-  if (!isNativePlatform()) {
-    console.debug('[push] skipped — not on native platform')
-    return
-  }
+  if (!isNativePlatform()) return  // browser'da push yok
 
   const granted = await CapPushBridge.requestPermission()
   if (!granted) {
@@ -245,8 +242,6 @@ export async function registerPushForUser(userId: string): Promise<void> {
   const platform = getPlatform()
   const now = new Date().toISOString()
 
-  console.info('[push] upserting token for user', userId, 'platform', platform)
-
   // Upsert on the (user_id, token) unique index — fresh rows get inserted,
   // known rows just update last_used_at.
   const { error } = await supabase
@@ -258,8 +253,6 @@ export async function registerPushForUser(userId: string): Promise<void> {
 
   if (error) {
     console.error('[push] failed to save device token', error)
-  } else {
-    console.info('[push] device token saved')
   }
 }
 

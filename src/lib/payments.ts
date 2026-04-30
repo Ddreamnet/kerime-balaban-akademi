@@ -1,15 +1,16 @@
 /**
  * Payments service — per-child billing cycles.
  *
- * Each payment row represents one billing period and carries explicit
- * period_start / period_end / due_date columns. The legacy
- * period_month / period_year pair is still written for backward compatibility;
- * new UI relies on the date columns.
+ * İki tür payment satırı:
+ *   1. Aylık (taekwondo): period_start/period_end/period_month/period_year dolu,
+ *      package_id NULL. `payments_kind_xor` constraint bu durumu garantiler.
+ *   2. Paket invoice (kickboks/cimnastik): period_* NULL, package_id dolu.
+ *      Paket başlangıcında DB trigger'ı oluşturur (due_date = start_date + 7d).
  *
- * The DB column `status` may hold 'paid' | 'unpaid' | 'late'. Going forward,
- * `late` is no longer set by the system — it is computed at read time from
- * due_date vs today via `derivePaymentStatus()`. Existing legacy `late` rows
- * are accepted and shown as overdue.
+ * Her iki tür için status: 'paid' | 'unpaid' | 'late'. Legacy `late` artık
+ * sistem tarafından set edilmiyor — `derivePaymentStatus()` due_date'ten türetir.
+ *
+ * `kind` helper'ı bir kayıdın hangi tür olduğunu belirler.
  */
 
 import { supabase } from './supabase'
@@ -19,14 +20,23 @@ export type PaymentStatus = 'paid' | 'unpaid' | 'late'
 /** UI-facing status — `overdue` is computed, never stored. */
 export type DerivedPaymentStatus = 'paid' | 'pending' | 'overdue'
 
+/** Aylık abonelik mi paket invoice mi? */
+export type PaymentKind = 'monthly' | 'package'
+
 export interface PaymentRecord {
   id: string
   child_id: string
-  period_month: number
-  period_year: number
-  period_start: string
-  period_end: string
+  /** Paket invoice'larında NULL */
+  period_month: number | null
+  /** Paket invoice'larında NULL */
+  period_year: number | null
+  /** Paket invoice'larında NULL */
+  period_start: string | null
+  /** Paket invoice'larında NULL */
+  period_end: string | null
   due_date: string
+  /** Aylık satırlarda NULL — paket satırlarında snapshot fiyat */
+  package_id: string | null
   amount: number | null
   status: PaymentStatus
   paid_at: string | null
@@ -59,10 +69,34 @@ export function formatPeriod(month: number, year: number): string {
 }
 
 /**
- * Format a period range like "18 Mart → 17 Nisan 2026". Year is shown only
- * on the end date when both endpoints share the same calendar year.
+ * Bir payment satırı için UI label'i (monthly: "Mart 2026", paket: "Paket #2").
+ * Paket package_number'ı için packages tablosunu sorgulamak gerek; UI'da
+ * package_number ayrıca elde edilebileceği için bu helper'a opsiyonel verilir.
  */
-export function formatPeriodRange(periodStart: string, periodEnd: string): string {
+export function formatPaymentLabel(
+  record: PaymentRecord,
+  packageNumber?: number | null,
+): string {
+  if (record.package_id) {
+    return packageNumber ? `Paket #${packageNumber}` : 'Paket'
+  }
+  if (record.period_month && record.period_year) {
+    return formatPeriod(record.period_month, record.period_year)
+  }
+  return formatDate(record.due_date)
+}
+
+/**
+ * Format a period range like "18 Mart → 17 Nisan 2026". Year is shown only
+ * on the end date when both endpoints share the same calendar year. Paket
+ * invoice'larında period_* NULL olduğu için boş string döner — caller
+ * formatPaymentLabel ile paket label'ı göstermeli.
+ */
+export function formatPeriodRange(
+  periodStart: string | null,
+  periodEnd: string | null,
+): string {
+  if (!periodStart || !periodEnd) return ''
   const s = new Date(periodStart)
   const e = new Date(periodEnd)
   const sameYear = s.getFullYear() === e.getFullYear()
@@ -111,11 +145,12 @@ export function daysUntilDue(dueDate: string, now = new Date()): number {
 interface PaymentRow {
   id: string
   child_id: string
-  period_month: number
-  period_year: number
-  period_start: string
-  period_end: string
+  period_month: number | null
+  period_year: number | null
+  period_start: string | null
+  period_end: string | null
   due_date: string
+  package_id: string | null
   amount: number | null
   status: string
   paid_at: string | null
@@ -135,6 +170,7 @@ function mapPayment(row: PaymentRow): PaymentRecord {
     period_start: row.period_start,
     period_end: row.period_end,
     due_date: row.due_date,
+    package_id: row.package_id,
     amount: row.amount,
     status: row.status as PaymentStatus,
     paid_at: row.paid_at,
@@ -144,6 +180,14 @@ function mapPayment(row: PaymentRow): PaymentRecord {
     created_at: row.created_at,
     updated_at: row.updated_at,
   }
+}
+
+/**
+ * Bir payment satırının türünü belirle (XOR constraint sayesinde sıfır veya iki
+ * field'ın birden dolu olması imkansız).
+ */
+export function derivePaymentKind(record: PaymentRecord): PaymentKind {
+  return record.package_id ? 'package' : 'monthly'
 }
 
 /** Parent / admin / coach: all payment rows for a single child (newest first) */
@@ -158,7 +202,10 @@ export async function listPaymentsForChild(childId: string): Promise<PaymentReco
   return data.map(mapPayment)
 }
 
-/** Admin: all payment rows for a specific (month, year). Legacy grid view. */
+/**
+ * Admin: belirli bir (month, year) için tüm aylık satırlar. Paket invoice'lar
+ * dahil değildir (package_id IS NOT NULL filter).
+ */
 export async function listPaymentsForPeriod(
   month: number,
   year: number,
@@ -168,6 +215,37 @@ export async function listPaymentsForPeriod(
     .select('*')
     .eq('period_month', month)
     .eq('period_year', year)
+    .is('package_id', null)
+
+  if (error || !data) return []
+  return data.map(mapPayment)
+}
+
+/** Bir çocuğun sadece aylık (taekwondo) ödemelerini döner. */
+export async function listMonthlyPaymentsForChild(
+  childId: string,
+): Promise<PaymentRecord[]> {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('child_id', childId)
+    .is('package_id', null)
+    .order('period_start', { ascending: false })
+
+  if (error || !data) return []
+  return data.map(mapPayment)
+}
+
+/** Bir çocuğun sadece paket invoice'larını döner (kickboks/cimnastik). */
+export async function listPackageInvoicesForChild(
+  childId: string,
+): Promise<PaymentRecord[]> {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('child_id', childId)
+    .not('package_id', 'is', null)
+    .order('due_date', { ascending: false })
 
   if (error || !data) return []
   return data.map(mapPayment)

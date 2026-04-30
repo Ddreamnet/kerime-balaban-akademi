@@ -7,8 +7,21 @@ project_id = "kerime-balaban-akademi"
 [functions.send-notification]
 verify_jwt = false
 
+# Cron-only fonksiyonlar: pg_cron `trigger_*` fonksiyonları service_role
+# JWT ile çağırır (Bearer header). Platform JWT doğrulamasını AÇIK tutarak
+# anonim çağrıları reddediyoruz — eskiden false idi, herkes endpoint'i
+# anonim çağırarak fatura hatırlatması spam'i tetikleyebilirdi.
 [functions.daily-birthday-notifications]
-verify_jwt = false
+verify_jwt = true
 
 [functions.payment-reminders]
-verify_jwt = false
+verify_jwt = true
+
+[functions.lesson-reminder]
+verify_jwt = true
+
+[functions.attendance-missing-detector]
+verify_jwt = true
+
+[functions.package-inactive-detector]
+verify_jwt = true

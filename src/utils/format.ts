@@ -6,6 +6,19 @@
 
 const LOCALE = 'tr-TR'
 
+/**
+ * Türkiye saati (Europe/Istanbul, UTC+3, DST yok) için bugünün ISO tarih
+ * stringi (YYYY-MM-DD). Cron edge function'ları zaten istanbulToday() helper
+ * kullanıyor — UI tarafında da aynı garantiyi vermek için bu helper'ı kullanın
+ * (gece geç saatte UTC tarih kayması olmasın).
+ */
+export function todayIsoTrt(): string {
+  const now = new Date()
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60_000
+  const trt = new Date(utcMs + 3 * 3_600_000)
+  return trt.toISOString().slice(0, 10)
+}
+
 /** Format a date to Turkish long format: "15 Nisan 2024" */
 export function formatDateLong(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date

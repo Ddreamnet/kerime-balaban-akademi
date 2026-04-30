@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Clock, XCircle, AlertTriangle } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
-import { Section } from '@/components/layout/Section'
+import { PanelBackdrop } from '@/components/layout/PanelBackdrop'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -68,81 +68,109 @@ export function LoginPage() {
   }
 
   return (
-    <Section bg="default" className="min-h-[calc(100dvh-4rem)] flex items-center">
-      <Container narrow>
-        <div className="flex flex-col items-center gap-6">
-          <div className="text-center">
-            <h1 className="font-display font-bold text-headline-lg text-on-surface">
-              Giriş Yap
-            </h1>
-            <p className="text-body-md text-on-surface/60 mt-1">
-              Hesabınıza erişin
-            </p>
-          </div>
-
-          <Card className="w-full">
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-              <Input
-                label="E-posta"
-                type="email"
-                placeholder="ornek@email.com"
-                autoComplete="email"
-                error={errors.email?.message}
-                {...register('email', {
-                  required: 'E-posta adresi gereklidir.',
-                  pattern: {
-                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                    message: 'Geçerli bir e-posta adresi girin.',
-                  },
-                })}
-              />
-
-              <Input
-                label="Şifre"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                error={errors.password?.message}
-                {...register('password', { required: 'Şifre gereklidir.' })}
-              />
-
-              {errors.root && (
-                <p
-                  className="text-body-sm text-primary bg-primary-container rounded-md px-3 py-2"
-                  role="alert"
-                >
-                  {errors.root.message}
-                </p>
-              )}
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                fullWidth
-                loading={isSubmitting}
-              >
-                Giriş Yap
-              </Button>
-            </form>
-          </Card>
-
-          <p className="text-body-md text-on-surface/60 text-center">
-            Hesabınız yok mu?{' '}
-            <Link to="/kayit" className="text-primary font-semibold hover:text-primary-dark transition-colors">
-              Kayıt Ol
-            </Link>
+    <AuthShell>
+      <div className="flex flex-col items-center gap-6">
+        <div className="text-center">
+          <h1 className="font-display font-bold text-headline-lg text-on-surface">
+            Giriş Yap
+          </h1>
+          <p className="text-body-md text-on-surface/60 mt-1">
+            Hesabınıza erişin
           </p>
-
-          <Link
-            to="/"
-            className="text-body-sm text-on-surface/40 hover:text-on-surface/70 transition-colors"
-          >
-            ← Anasayfaya dön
-          </Link>
         </div>
+
+        <Card className="w-full">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+            <Input
+              label="E-posta"
+              type="email"
+              placeholder="ornek@email.com"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              inputMode="email"
+              spellCheck={false}
+              enterKeyHint="next"
+              error={errors.email?.message}
+              {...register('email', {
+                required: 'E-posta adresi gereklidir.',
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: 'Geçerli bir e-posta adresi girin.',
+                },
+              })}
+            />
+
+            <Input
+              label="Şifre"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              enterKeyHint="done"
+              error={errors.password?.message}
+              {...register('password', { required: 'Şifre gereklidir.' })}
+            />
+
+            {errors.root && (
+              <p
+                className="text-body-sm text-primary bg-primary-container rounded-md px-3 py-2"
+                role="alert"
+              >
+                {errors.root.message}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={isSubmitting}
+            >
+              Giriş Yap
+            </Button>
+
+            <Link
+              to="/sifremi-unuttum"
+              className="text-body-sm text-on-surface/55 hover:text-primary transition-colors text-center -mt-1"
+            >
+              Şifremi unuttum
+            </Link>
+          </form>
+        </Card>
+
+        <p className="text-body-md text-on-surface/60 text-center">
+          Hesabınız yok mu?{' '}
+          <Link to="/kayit" className="text-primary font-semibold hover:text-primary-dark transition-colors">
+            Kayıt Ol
+          </Link>
+        </p>
+
+        <Link
+          to="/"
+          className="text-body-sm text-on-surface/40 hover:text-on-surface/70 transition-colors"
+        >
+          ← Anasayfaya dön
+        </Link>
+      </div>
+    </AuthShell>
+  )
+}
+
+/**
+ * Login/Register sayfalarının arka plan kabuğu. Dashboard panellerindeki
+ * PanelBackdrop'in absolute variant'ı ile aynı görsel — Header/Footer
+ * (PublicLayout'tan) üstte kalır, içerik panel-mesh + ink stroke arka planı
+ * üzerinde render olur.
+ */
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative min-h-[calc(100dvh-4rem)] flex items-center overflow-hidden isolate py-12">
+      <PanelBackdrop variant="absolute" />
+      <Container narrow className="relative z-10">
+        {children}
       </Container>
-    </Section>
+    </div>
   )
 }
 
@@ -183,33 +211,31 @@ function GateScreen({
   }[gate.kind]
 
   return (
-    <Section bg="default" className="min-h-[calc(100dvh-4rem)] flex items-center">
-      <Container narrow>
-        <Card className="flex flex-col items-center gap-5 py-12 text-center">
-          <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center', config.iconBg)}>
-            <config.Icon className={cn('w-8 h-8', config.iconColor)} />
-          </div>
-          <div className="flex flex-col gap-2 max-w-sm">
-            <h2 className="font-display font-bold text-headline-md text-on-surface">
-              {config.title}
-            </h2>
-            <p className="text-body-md text-on-surface/60 leading-relaxed">
-              {config.body}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 w-full max-w-xs mt-2">
-            <Button variant="primary" size="lg" fullWidth onClick={onBack}>
-              Tekrar Dene
-            </Button>
-            <Link
-              to="/iletisim"
-              className="text-body-sm text-on-surface/50 hover:text-primary transition-colors text-center py-2"
-            >
-              Akademiyle iletişime geçin
-            </Link>
-          </div>
-        </Card>
-      </Container>
-    </Section>
+    <AuthShell>
+      <Card className="flex flex-col items-center gap-5 py-12 text-center">
+        <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center', config.iconBg)}>
+          <config.Icon className={cn('w-8 h-8', config.iconColor)} />
+        </div>
+        <div className="flex flex-col gap-2 max-w-sm">
+          <h2 className="font-display font-bold text-headline-md text-on-surface">
+            {config.title}
+          </h2>
+          <p className="text-body-md text-on-surface/60 leading-relaxed">
+            {config.body}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 w-full max-w-xs mt-2">
+          <Button variant="primary" size="lg" fullWidth onClick={onBack}>
+            Tekrar Dene
+          </Button>
+          <Link
+            to="/iletisim"
+            className="text-body-sm text-on-surface/50 hover:text-primary transition-colors text-center py-2"
+          >
+            Akademiyle iletişime geçin
+          </Link>
+        </div>
+      </Card>
+    </AuthShell>
   )
 }

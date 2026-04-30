@@ -7,6 +7,7 @@ import { Input, Textarea } from '@/components/ui/Input'
 import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { updateChild, type ChildWithParent, type Gender } from '@/lib/children'
 import { listActiveClasses } from '@/lib/classes'
+import { listActiveBranches, type Branch } from '@/lib/branches'
 import { beltLevelLabels } from '@/data/classes'
 import type { BeltLevel, ClassGroup } from '@/types/content.types'
 import { cn } from '@/utils/cn'
@@ -24,6 +25,8 @@ interface FormValues {
   gender: Gender | ''
   belt_level: BeltLevel | ''
   class_group_id: string
+  branch_id: string
+  package_price_override: string
   start_date: string
   avatar_url: string
   tc_no: string
@@ -34,6 +37,7 @@ interface FormValues {
 
 export function EditChildModal({ child, isOpen, onClose, onSaved }: EditChildModalProps) {
   const [classes, setClasses] = useState<ClassGroup[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
 
   const {
     register,
@@ -44,13 +48,20 @@ export function EditChildModal({ child, isOpen, onClose, onSaved }: EditChildMod
     setError,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    values: child
+    // defaultValues kullanıyoruz (values değil) — kullanıcı form'da yazarken
+    // component re-render olursa, values re-applies edilip kullanıcının
+    // yazdığı değerler silinirdi. defaultValues sadece initial mount'ta uygulanır;
+    // child prop'u değişince form'u senkronlamak için aşağıdaki useEffect kullanılır.
+    defaultValues: child
       ? {
           full_name: child.full_name,
           birthday: child.birthday ?? '',
           gender: child.gender ?? '',
           belt_level: child.belt_level ?? '',
           class_group_id: child.class_group_id ?? '',
+          branch_id: child.branch_id ?? '',
+          package_price_override:
+            child.package_price_override !== null ? String(child.package_price_override) : '',
           start_date: child.start_date ?? '',
           avatar_url: child.avatar_url ?? '',
           tc_no: child.tc_no ?? '',
@@ -64,13 +75,39 @@ export function EditChildModal({ child, isOpen, onClose, onSaved }: EditChildMod
   useEffect(() => {
     if (!isOpen) return
     void listActiveClasses().then(setClasses)
+    void listActiveBranches().then(setBranches)
   }, [isOpen])
+
+  // Modal açıldığında ya da child değiştiğinde form'u sync'le (values yerine
+  // explicit reset — kullanıcı yazarken re-render olursa state kaybolmasın diye).
+  useEffect(() => {
+    if (!isOpen || !child) return
+    reset({
+      full_name: child.full_name,
+      birthday: child.birthday ?? '',
+      gender: child.gender ?? '',
+      belt_level: child.belt_level ?? '',
+      class_group_id: child.class_group_id ?? '',
+      branch_id: child.branch_id ?? '',
+      package_price_override:
+        child.package_price_override !== null ? String(child.package_price_override) : '',
+      start_date: child.start_date ?? '',
+      avatar_url: child.avatar_url ?? '',
+      tc_no: child.tc_no ?? '',
+      license_no: child.license_no ?? '',
+      notes: child.notes ?? '',
+      coach_note: child.coach_note ?? '',
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, child?.id])
 
   if (!child) return null
 
   const selectedGender = watch('gender')
   const selectedBelt = watch('belt_level')
   const selectedClassId = watch('class_group_id')
+  const selectedBranchId = watch('branch_id')
+  const selectedBranch = branches.find((b) => b.id === selectedBranchId)
   const currentAvatar = watch('avatar_url')
 
   const onSubmit = async (data: FormValues) => {
@@ -80,12 +117,22 @@ export function EditChildModal({ child, isOpen, onClose, onSaved }: EditChildMod
       return
     }
 
+    const overrideStr = data.package_price_override.trim()
+    const overrideNum =
+      overrideStr === '' ? null : Number.parseFloat(overrideStr)
+    if (overrideNum !== null && (!Number.isFinite(overrideNum) || overrideNum < 0)) {
+      setError('package_price_override', { message: 'Geçerli bir fiyat girin (≥ 0).' })
+      return
+    }
+
     const payload = {
       full_name: data.full_name,
       birthday: data.birthday || null,
       gender: (data.gender || null) as Gender | null,
       belt_level: (data.belt_level || null) as BeltLevel | null,
       class_group_id: data.class_group_id || null,
+      branch_id: data.branch_id || undefined,
+      package_price_override: overrideNum,
       start_date: data.start_date || null,
       avatar_url: data.avatar_url || null,
       tc_no: tc || null,
@@ -154,6 +201,9 @@ export function EditChildModal({ child, isOpen, onClose, onSaved }: EditChildMod
             label="Ad Soyad"
             type="text"
             placeholder="Öğrencinin adı ve soyadı"
+            autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
             error={errors.full_name?.message}
             {...register('full_name', {
               required: 'Ad soyad gereklidir.',
@@ -194,6 +244,80 @@ export function EditChildModal({ child, isOpen, onClose, onSaved }: EditChildMod
 
         {/* Akademi */}
         <Section title="Akademi">
+          <div className="flex flex-col gap-2">
+            <span className="text-label-md text-on-surface/80 font-medium">
+              Branş <span className="text-primary">*</span>
+            </span>
+            {branches.length === 0 ? (
+              <p className="text-body-sm text-on-surface/50 bg-surface-low rounded-md px-3 py-2">
+                Aktif branş yok.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {branches.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setValue('branch_id', b.id, { shouldDirty: true })}
+                    aria-pressed={selectedBranchId === b.id}
+                    className={cn(
+                      'flex items-center justify-between gap-2 rounded-lg p-3 min-h-touch',
+                      'transition-colors focus-visible:outline-2 focus-visible:outline-primary',
+                      selectedBranchId === b.id
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-low text-on-surface/80 hover:bg-surface-high',
+                    )}
+                  >
+                    <span className="font-display font-semibold text-body-md">{b.name}</span>
+                    <span
+                      className={cn(
+                        'text-body-sm',
+                        selectedBranchId === b.id ? 'text-white/80' : 'text-on-surface/50',
+                      )}
+                    >
+                      {b.billing_model === 'monthly' ? 'Aylık' : 'Paket'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {errors.branch_id && (
+              <p className="text-body-sm text-primary">{errors.branch_id.message}</p>
+            )}
+          </div>
+
+          {selectedBranch?.billing_model === 'package' && (
+            <Input
+              label="Paket Fiyatı (özel)"
+              type="number"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
+              placeholder={
+                selectedBranch.default_price !== null
+                  ? `Boş = varsayılan ${selectedBranch.default_price} ₺`
+                  : 'Boş = branş varsayılan fiyatı'
+              }
+              hint="Sadece bu öğrenciye özel fiyat girersen mevcut paket etkilenmez (snapshot); gelecek paketler bu fiyatı kullanır."
+              error={errors.package_price_override?.message}
+              {...register('package_price_override')}
+            />
+          )}
+
+          {/* Branş değişimi uyarısı — yeni seçilen branş eski branş ile farklıysa */}
+          {selectedBranchId && child.branch_id && selectedBranchId !== child.branch_id && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 flex items-start gap-2">
+              <span className="text-amber-700 font-bold text-body-sm shrink-0">⚠</span>
+              <div className="text-body-sm text-amber-900">
+                <strong>Branş değişiyor.</strong> Mevcut paket (varsa) bitene kadar
+                eski branş takvimiyle devam eder. Yeni branş'ın paket akışı bir
+                sonraki yoklamada başlar.
+                {selectedBranch?.billing_model === 'package' &&
+                  ' Eğer öğrencinin gelecek aylık ödemesi varsa silinir.'}
+              </div>
+            </div>
+          )}
+
           <Input
             label="Başlangıç Tarihi"
             type="date"
@@ -280,6 +404,8 @@ export function EditChildModal({ child, isOpen, onClose, onSaved }: EditChildMod
           <Input
             label="Lisans Numarası"
             type="text"
+            inputMode="numeric"
+            autoCorrect="off"
             placeholder="Varsa federasyon lisans no"
             {...register('license_no')}
           />

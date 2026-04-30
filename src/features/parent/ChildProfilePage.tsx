@@ -16,6 +16,9 @@ import {
   type Child,
 } from '@/lib/children'
 import { listActiveClasses } from '@/lib/classes'
+import { getBranchByCode, getBranchById } from '@/lib/branches'
+import { getActivePackage, type Package as PackageRow } from '@/lib/packages'
+import { listUpcomingLessons, type Lesson } from '@/lib/lessons'
 import { beltLevelLabels } from '@/data/classes'
 import type { BeltLevel, ClassGroup } from '@/types/content.types'
 import { formatDateLong } from '@/utils/format'
@@ -81,11 +84,10 @@ export function ChildProfilePage() {
 
       {/* Content: view or edit */}
       {child && !isEditing ? (
-        <ChildView
-          child={child}
-          classes={classes}
-          onEdit={() => setIsEditing(true)}
-        />
+        <>
+          <ChildView child={child} classes={classes} onEdit={() => setIsEditing(true)} />
+          <PackageStatusCard child={child} />
+        </>
       ) : (
         <ChildForm
           existing={child}
@@ -234,12 +236,23 @@ function ChildForm({ existing, classes, parentId, onSaved, onCancel }: ChildForm
   const currentAvatar = watch('avatar_url')
 
   const onSubmit = async (data: ChildFormValues) => {
-    const payload = {
+    const payload: Parameters<typeof createChild>[1] = {
       full_name: data.full_name,
       birthday: data.birthday || null,
       class_group_id: data.class_group_id || null,
       belt_level: (data.belt_level || null) as BeltLevel | null,
       avatar_url: data.avatar_url || null,
+    }
+
+    // Yeni çocukta default taekwondo branş'ına bağla — admin sonradan istediği
+    // branş'a (kickboks/cimnastik) taşıyabilir.
+    if (!existing) {
+      const taekwondo = await getBranchByCode('taekwondo')
+      if (!taekwondo) {
+        setError('root', { message: 'Varsayılan branş bulunamadı, admin ile iletişime geç.' })
+        return
+      }
+      payload.branch_id = taekwondo.id
     }
 
     const { child, error } = existing
@@ -418,3 +431,116 @@ function OptionButton({ selected, onClick, title, subtitle, compact }: OptionBut
     </button>
   )
 }
+
+// ─── Paket durumu (parent view) ──────────────────────────────────────────────
+
+function PackageStatusCard({ child }: { child: Child }) {
+  const [pkg, setPkg] = useState<PackageRow | null>(null)
+  const [upcoming, setUpcoming] = useState<Lesson[]>([])
+  const [billingModel, setBillingModel] = useState<'monthly' | 'package' | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      const [active, b, lessons] = await Promise.all([
+        getActivePackage(child.id),
+        getBranchById(child.branch_id),
+        listUpcomingLessons(child.id, 5),
+      ])
+      if (cancelled) return
+      setPkg(active)
+      setBillingModel(b?.billing_model ?? null)
+      setUpcoming(lessons)
+      setIsLoading(false)
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [child.id, child.branch_id])
+
+  if (isLoading) return null
+  if (billingModel !== 'package') return null
+
+  if (!pkg) {
+    return (
+      <Card className="flex items-start gap-3 py-4">
+        <Baby className="w-5 h-5 text-on-surface/40 shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="font-display font-semibold text-body-md text-on-surface">
+            Henüz aktif paket yok
+          </p>
+          <p className="text-body-sm text-on-surface/60">
+            Antrenör ilk yoklamayı işaretlediğinde 8-derslik paketin otomatik başlar.
+          </p>
+        </div>
+      </Card>
+    )
+  }
+
+  const remaining = pkg.total_slots - pkg.used_slots
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-label-sm text-on-surface/45 uppercase tracking-widest">
+            Aktif paket
+          </p>
+          <h3 className="font-display font-bold text-title-lg text-primary mt-0.5">
+            Paket #{pkg.package_number}
+          </h3>
+        </div>
+        {pkg.telafi_granted && <Badge variant="secondary">Telafi hakkı eklendi</Badge>}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-body-sm">
+          <span className="font-semibold text-on-surface">
+            {pkg.used_slots} / {pkg.total_slots} ders
+          </span>
+          <span className="text-on-surface/60">{remaining} ders kaldı</span>
+        </div>
+        <div className="w-full h-2 rounded-full bg-surface-low overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all"
+            style={{ width: `${(pkg.used_slots / pkg.total_slots) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {pkg.planned_end_date && (
+        <p className="text-body-sm text-on-surface/65">
+          Planlanan bitiş tarihi:{' '}
+          <strong className="text-on-surface">
+            {formatDateLong(pkg.planned_end_date)}
+          </strong>
+        </p>
+      )}
+
+      {upcoming.length > 0 && (
+        <div className="flex flex-col gap-2 pt-3 border-t border-surface-low">
+          <p className="text-label-sm text-on-surface/45 uppercase tracking-widest">
+            Gelecek dersler
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {upcoming.map((l) => (
+              <li
+                key={l.id}
+                className="flex items-center justify-between gap-3 bg-surface-low rounded-md px-3 py-2 text-body-sm"
+              >
+                <span className="text-on-surface">{formatDateLong(l.scheduled_date)}</span>
+                <span className="text-on-surface/60 text-label-sm">
+                  {l.is_telafi && <Badge variant="secondary">Telafi</Badge>}
+                  {l.is_extra && <Badge variant="warning">Ek ders</Badge>}
+                  {l.scheduled_time && <span className="ml-2">{l.scheduled_time}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  )
+}
+

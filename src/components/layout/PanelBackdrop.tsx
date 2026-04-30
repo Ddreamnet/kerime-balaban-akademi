@@ -1,3 +1,14 @@
+import { cn } from '@/utils/cn'
+
+interface PanelBackdropProps {
+  /**
+   * 'fixed' (default) — viewport'a sabitli, dashboard panellerinde sayfa
+   * boyunca görünür; 'absolute' — parent container'a göre konumlanır,
+   * Header/Footer'lı sayfalarda (ör. login/register) kullanılır.
+   */
+  variant?: 'fixed' | 'absolute'
+}
+
 /**
  * Ambient backdrop for admin/coach/parent dashboard panels.
  *
@@ -5,25 +16,14 @@
  * calligraphy and Korean seal art. Built entirely from SVG paths over a
  * mesh-gradient atmosphere; no images, no `background-attachment: fixed`
  * (broken on iOS Safari).
- *
- * Layers (bottom → top):
- *   1. panel-mesh-bg          — 5-stop radial gradient atmosphere
- *   2. Two sweeping ink strokes (primary + wine), asymmetric directions
- *   3. A short "flick" accent in the upper-right quadrant
- *   4. Two ink-splatter clusters (upper-left, lower-right) for hand-thrown feel
- *   5. SVG turbulence grain — paper texture
- *   6. One asymmetric editorial rule across the canvas (desktop only)
- *   7. Korean seal stamp ornament in the bottom-right corner
- *
- * Mobile: same composition; the SVG scales via `preserveAspectRatio: slice`.
- * The editorial rule is hidden under md to avoid clutter, the seal shrinks.
- *
- * Static — no animation. The composition stands on its asymmetry alone.
  */
-export function PanelBackdrop() {
+export function PanelBackdrop({ variant = 'fixed' }: PanelBackdropProps = {}) {
   return (
     <div
-      className="fixed inset-0 z-0 pointer-events-none overflow-hidden panel-mesh-bg"
+      className={cn(
+        variant === 'fixed' ? 'fixed' : 'absolute',
+        'inset-0 z-0 pointer-events-none overflow-hidden panel-mesh-bg',
+      )}
       aria-hidden="true"
     >
       {/* ── Main composition SVG ──────────────────────────────────────────── */}

@@ -21,12 +21,15 @@ import {
   derivePaymentStatus,
   daysUntilDue,
   formatPeriodRange,
+  formatPaymentLabel,
   formatDate,
   computePaymentSummary,
   DERIVED_PAYMENT_STATUS_LABELS,
   type PaymentRecord,
   type DerivedPaymentStatus,
 } from '@/lib/payments'
+import { supabase } from '@/lib/supabase'
+import { getBranchById } from '@/lib/branches'
 import { academyInfo, contactLinks } from '@/data/academyInfo'
 import { formatCurrency, whatsappUrl } from '@/utils/format'
 import { cn } from '@/utils/cn'
@@ -42,6 +45,8 @@ export function ParentPaymentsPage() {
   const { user } = useAuth()
   const [child, setChild] = useState<Child | null>(null)
   const [records, setRecords] = useState<PaymentRecord[]>([])
+  const [packageNumberMap, setPackageNumberMap] = useState<Map<string, number>>(new Map())
+  const [billingModel, setBillingModel] = useState<'monthly' | 'package' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -51,13 +56,41 @@ export function ParentPaymentsPage() {
       const c = await getMyChild(user.id)
       setChild(c)
       if (c) {
-        const list = await listPaymentsForChild(c.id)
+        const [list, branch] = await Promise.all([
+          listPaymentsForChild(c.id),
+          getBranchById(c.branch_id),
+        ])
         setRecords(list)
+        setBillingModel(branch?.billing_model ?? null)
+
+        // Paket numaralarını topla
+        const packageIds = list
+          .map((p) => p.package_id)
+          .filter((id): id is string => id !== null)
+        if (packageIds.length > 0) {
+          const { data: pkgs } = await supabase
+            .from('packages')
+            .select('id, package_number')
+            .in('id', packageIds)
+          const m = new Map<string, number>()
+          for (const row of (pkgs ?? []) as { id: string; package_number: number }[]) {
+            m.set(row.id, row.package_number)
+          }
+          setPackageNumberMap(m)
+        }
       }
       setIsLoading(false)
     }
     void load()
   }, [user])
+
+  const labelFor = useMemo(
+    () => (record: PaymentRecord): string => {
+      const num = record.package_id ? packageNumberMap.get(record.package_id) ?? null : null
+      return formatPaymentLabel(record, num)
+    },
+    [packageNumberMap],
+  )
 
   // Görünür kayıtlar: geçmiş tüm ödemeler + bir sonraki yaklaşan ödeme.
   // İleride generate edilmiş aylar, kendinden önceki ödemenin vadesi geçene
@@ -113,13 +146,15 @@ export function ParentPaymentsPage() {
         </div>
       ) : !child ? (
         <NoChildCard />
-      ) : !child.billing_start_date ? (
+      ) : billingModel === 'monthly' && !child.billing_start_date ? (
         <NotConfiguredCard />
+      ) : billingModel === 'package' && records.length === 0 ? (
+        <NoPackageYetCard />
       ) : (
         <>
           {/* Spotlight: next due (or "all clear") */}
           {spotlight ? (
-            <SpotlightCard record={spotlight} />
+            <SpotlightCard record={spotlight} label={labelFor(spotlight)} />
           ) : (
             <AllClearCard />
           )}
@@ -156,7 +191,7 @@ export function ParentPaymentsPage() {
               </h3>
               <div className="flex flex-col gap-2">
                 {visibleRecords.map((r) => (
-                  <PaymentRow key={r.id} record={r} />
+                  <PaymentRow key={r.id} record={r} label={labelFor(r)} />
                 ))}
               </div>
             </div>
@@ -196,6 +231,21 @@ function NoChildCard() {
           Çocuğumu Kaydet
         </Button>
       </Link>
+    </Card>
+  )
+}
+
+function NoPackageYetCard() {
+  return (
+    <Card className="flex flex-col items-center gap-3 py-12 text-center">
+      <CreditCard className="w-10 h-10 text-on-surface/30" />
+      <p className="font-display font-bold text-title-lg text-on-surface">
+        Henüz paket başlatılmadı
+      </p>
+      <p className="text-body-md text-on-surface/60 max-w-md">
+        İlk yoklama işaretlendiğinde antrenör tarafından otomatik bir paket başlatılır
+        ve fatura burada görünür.
+      </p>
     </Card>
   )
 }
@@ -249,13 +299,14 @@ function AllClearCard() {
 
 // ─── Spotlight: next due ────────────────────────────────────────────────────
 
-function SpotlightCard({ record }: { record: PaymentRecord }) {
+function SpotlightCard({ record, label }: { record: PaymentRecord; label: string }) {
   const derived = derivePaymentStatus(record)
   const days = daysUntilDue(record.due_date)
 
+  const periodText = label || formatPeriodRange(record.period_start, record.period_end)
   const whatsappHref = whatsappUrl(
     academyInfo.whatsapp,
-    `Merhaba, ${formatPeriodRange(record.period_start, record.period_end)} dönemi ödemesi için bilgi almak istiyorum.`,
+    `Merhaba, ${periodText} ödemesi için bilgi almak istiyorum.`,
   )
 
   if (derived === 'overdue') {
@@ -267,7 +318,7 @@ function SpotlightCard({ record }: { record: PaymentRecord }) {
           </div>
           <div className="flex-1">
             <p className="panel-kicker-inverted">
-              {formatPeriodRange(record.period_start, record.period_end)}
+              {label || formatPeriodRange(record.period_start, record.period_end)}
             </p>
             <p className="font-display font-black text-headline-md leading-tight mt-0.5 text-white">
               {Math.abs(days)} gün geçti
@@ -310,7 +361,7 @@ function SpotlightCard({ record }: { record: PaymentRecord }) {
         </div>
         <div className="flex-1">
           <p className="text-label-md uppercase tracking-widest text-white/70">
-            {formatPeriodRange(record.period_start, record.period_end)}
+            {label || formatPeriodRange(record.period_start, record.period_end)}
           </p>
           <p className="font-display font-black text-headline-md leading-tight mt-0.5">
             {days === 0
@@ -367,7 +418,7 @@ function SummaryTile({ label, value, variant, icon: Icon }: SummaryTileProps) {
 
 // ─── Payment row ────────────────────────────────────────────────────────────
 
-function PaymentRow({ record }: { record: PaymentRecord }) {
+function PaymentRow({ record, label }: { record: PaymentRecord; label: string }) {
   const derived = derivePaymentStatus(record)
 
   const config: Record<DerivedPaymentStatus, {
@@ -420,7 +471,7 @@ function PaymentRow({ record }: { record: PaymentRecord }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-display font-semibold text-body-md text-on-surface">
-          {formatPeriodRange(record.period_start, record.period_end)}
+          {label || formatPeriodRange(record.period_start, record.period_end)}
         </p>
         <p className="text-body-sm text-on-surface/55">
           Vade: {formatDate(record.due_date)}

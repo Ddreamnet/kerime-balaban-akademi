@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { PageHeader, EmptyState } from '@/components/dashboard'
 import { listAllChildren, type ChildWithParent } from '@/lib/children'
 import { listActiveClasses } from '@/lib/classes'
-import { listChildIdsForCoach } from '@/lib/assignments'
+import { listClassIdsForCoach } from '@/lib/classCoaches'
 import { useAuth } from '@/hooks/useAuth'
 import { beltLevelLabels } from '@/data/classes'
 import type { ClassGroup } from '@/types/content.types'
@@ -30,14 +30,19 @@ export function CoachStudentsPage() {
     let cancelled = false
     void (async () => {
       setIsLoading(true)
-      const [list, cls, myChildIds] = await Promise.all([
+      const [list, cls, classIds] = await Promise.all([
         listAllChildren(),
         listActiveClasses(),
-        listChildIdsForCoach(user.id),
+        listClassIdsForCoach(user.id),
       ])
       if (cancelled) return
-      setStudents(list.filter((s) => myChildIds.has(s.id)))
-      setClasses(cls)
+      const classIdSet = new Set(classIds)
+      // Sadece koç'un atandığı class'lardaki öğrenciler.
+      setStudents(
+        list.filter((s) => s.class_group_id !== null && classIdSet.has(s.class_group_id)),
+      )
+      // Class filter dropdown'ında da yalnızca atadığı class'ları göster.
+      setClasses(cls.filter((c) => classIdSet.has(c.id)))
       setIsLoading(false)
     })()
     return () => {

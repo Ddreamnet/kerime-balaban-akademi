@@ -1,0 +1,27 @@
+{
+  "name": "Kerime Balaban Taekwondo Akademisi",
+  "short_name": "Kerime Balaban",
+  "description": "Bartın'da çocuklar ve yetişkinler için profesyonel taekwondo, kickboks ve cimnastik eğitimi.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3B1E1E",
+  "theme_color": "#b7131a",
+  "lang": "tr-TR",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/images/logo-renkli.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo-renkli.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["sports", "education", "fitness"]
+}

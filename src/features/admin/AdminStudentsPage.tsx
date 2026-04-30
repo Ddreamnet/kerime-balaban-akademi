@@ -24,6 +24,7 @@ import {
   reactivateUser,
 } from '@/lib/auth'
 import { listAllClasses } from '@/lib/classes'
+import { listActiveBranches, type Branch } from '@/lib/branches'
 import { PageHeader, EmptyState } from '@/components/dashboard'
 import type { UserProfile } from '@/types/auth.types'
 import type { ClassGroup } from '@/types/content.types'
@@ -40,23 +41,27 @@ export function AdminStudentsPage() {
   const [students, setStudents] = useState<ChildWithParent[]>([])
   const [parents, setParents] = useState<UserProfile[]>([])
   const [classes, setClasses] = useState<ClassGroup[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [actioningParentId, setActioningParentId] = useState<string | null>(null)
   const [editing, setEditing] = useState<UserProfile | null>(null)
   const [editingChild, setEditingChild] = useState<ChildWithParent | null>(null)
   const [query, setQuery] = useState('')
+  const [branchFilter, setBranchFilter] = useState<string>('')
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true)
-      const [list, profiles, cls] = await Promise.all([
+      const [list, profiles, cls, brs] = await Promise.all([
         listAllChildren(),
         listProfiles({ role: 'parent' }),
         listAllClasses(),
+        listActiveBranches(),
       ])
       setStudents(list)
       setParents(profiles)
       setClasses(cls)
+      setBranches(brs)
       setIsLoading(false)
     }
     void load()
@@ -64,14 +69,19 @@ export function AdminStudentsPage() {
 
   const parentById = new Map(parents.map((p) => [p.id, p]))
   const classById = new Map(classes.map((c) => [c.id, c]))
+  const branchById = new Map(branches.map((b) => [b.id, b]))
   const parentIdsWithChildren = new Set(students.map((s) => s.parent_id))
   const parentsWithoutChildren = parents.filter((p) => !parentIdsWithChildren.has(p.id))
 
   // Instant search: ad veya soyada göre, hem öğrenci hem veli isimlerinde.
   const { filteredStudents, filteredParentsOnly } = useMemo(() => {
+    let baseStudents = students
+    if (branchFilter) {
+      baseStudents = students.filter((s) => s.branch_id === branchFilter)
+    }
     const q = query.trim().toLocaleLowerCase('tr')
     if (!q) {
-      return { filteredStudents: students, filteredParentsOnly: parentsWithoutChildren }
+      return { filteredStudents: baseStudents, filteredParentsOnly: parentsWithoutChildren }
     }
     const tokens = q.split(/\s+/).filter(Boolean)
     const matches = (...fields: Array<string | null | undefined>) => {
@@ -79,10 +89,10 @@ export function AdminStudentsPage() {
       return tokens.every((t) => haystack.includes(t))
     }
     return {
-      filteredStudents: students.filter((s) => matches(s.full_name, s.parent_name)),
+      filteredStudents: baseStudents.filter((s) => matches(s.full_name, s.parent_name)),
       filteredParentsOnly: parentsWithoutChildren.filter((p) => matches(p.full_name)),
     }
-  }, [query, students, parentsWithoutChildren])
+  }, [query, students, parentsWithoutChildren, branchFilter])
 
   const totalVisible = filteredStudents.length + filteredParentsOnly.length
 
@@ -151,6 +161,39 @@ export function AdminStudentsPage() {
         )}
       </div>
 
+      {/* Branş filter — birden fazla branş varsa göster */}
+      {branches.length > 1 && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setBranchFilter('')}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-label-md font-semibold transition-colors',
+              branchFilter === ''
+                ? 'bg-primary text-white'
+                : 'bg-surface-low text-on-surface/65 hover:bg-surface-high',
+            )}
+          >
+            Tümü
+          </button>
+          {branches.map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => setBranchFilter(b.id)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-label-md font-semibold transition-colors',
+                branchFilter === b.id
+                  ? 'bg-primary text-white'
+                  : 'bg-surface-low text-on-surface/65 hover:bg-surface-high',
+              )}
+            >
+              {b.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
@@ -181,6 +224,7 @@ export function AdminStudentsPage() {
                     parent={parent ?? null}
                     parentActive={parentActive}
                     classGroup={s.class_group_id ? classById.get(s.class_group_id) ?? null : null}
+                    branch={branchById.get(s.branch_id) ?? null}
                     isToggling={actioningParentId === s.parent_id}
                     onEditChild={() => setEditingChild(s)}
                     onEditParent={() => parent && setEditing(parent)}
@@ -262,6 +306,7 @@ function StudentCard({
   parent,
   parentActive,
   classGroup,
+  branch,
   isToggling,
   onEditChild,
   onEditParent,
@@ -271,6 +316,7 @@ function StudentCard({
   parent: UserProfile | null
   parentActive: boolean
   classGroup: ClassGroup | null
+  branch: Branch | null
   isToggling: boolean
   onEditChild: () => void
   onEditParent: () => void
@@ -317,6 +363,11 @@ function StudentCard({
                 )}
               </div>
               <div className="flex items-center gap-1.5 text-body-sm !leading-none text-on-surface/60 min-w-0 h-4">
+                {branch && (
+                  <span className="inline-flex items-center rounded-full px-1.5 py-px shrink-0 text-[10px] font-semibold uppercase tracking-wide bg-secondary-container text-secondary">
+                    {branch.name}
+                  </span>
+                )}
                 {beltClass && student.belt_level && (
                   <span
                     className={cn(

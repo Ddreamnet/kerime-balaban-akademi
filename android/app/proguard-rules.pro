@@ -12,10 +12,36 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Stack trace okunabilirliği için satır bilgisini koru.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ─── Capacitor core + plugin'ler ───────────────────────────────────────────
+# Capacitor JS bridge plugin sınıflarını @CapacitorPlugin annotation'dan
+# bulduğu için class isimleri obfuscate edilmemeli.
+-keep public class com.getcapacitor.** { *; }
+-keep public class * extends com.getcapacitor.Plugin
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod *;
+    @com.getcapacitor.annotation.PluginMethod *;
+}
+
+# Cordova plugins (Capacitor'la birlikte gelen)
+-keep class org.apache.cordova.** { *; }
+
+# ─── Firebase / Google Play Services ──────────────────────────────────────
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# ─── WebView JS interface ─────────────────────────────────────────────────
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# ─── Reflection-based JSON / Gson ──────────────────────────────────────────
+-keep class com.google.gson.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*

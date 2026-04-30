@@ -124,6 +124,10 @@ export function EditProfileModal({
         <Input
           label="Ad Soyad"
           type="text"
+          autoCapitalize="words"
+          autoComplete="name"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder="Ad Soyad"
           error={errors.full_name?.message}
           {...register('full_name', {
@@ -135,6 +139,9 @@ export function EditProfileModal({
         <Input
           label="Telefon"
           type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          autoCorrect="off"
           placeholder="+90 5XX XXX XX XX"
           error={errors.phone?.message}
           {...register('phone')}

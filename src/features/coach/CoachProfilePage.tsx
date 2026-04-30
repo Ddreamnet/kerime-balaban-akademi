@@ -1,12 +1,16 @@
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Lock, Check, User, Phone, Mail, KeyRound } from 'lucide-react'
+import { Lock, Check, User, Phone, Mail, KeyRound, Building2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { AvatarUpload } from '@/components/ui/AvatarUpload'
 import { PageHeader } from '@/components/dashboard'
 import { useAuth } from '@/hooks/useAuth'
 import { updateOwnProfile, updatePassword } from '@/lib/auth'
+import { listBranchesForCoach } from '@/lib/coachBranches'
+import type { Branch } from '@/lib/branches'
 
 interface ProfileFormValues {
   full_name: string
@@ -27,6 +31,12 @@ interface PasswordFormValues {
  */
 export function CoachProfilePage() {
   const { user, setUser } = useAuth()
+  const [myBranches, setMyBranches] = useState<Branch[]>([])
+
+  useEffect(() => {
+    if (!user) return
+    void listBranchesForCoach(user.id).then(setMyBranches)
+  }, [user])
 
   const profileForm = useForm<ProfileFormValues>({
     defaultValues: {
@@ -143,6 +153,9 @@ export function CoachProfilePage() {
             type="text"
             placeholder="Adınız Soyadınız"
             autoComplete="name"
+            autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
             error={profileForm.formState.errors.full_name?.message}
             {...profileForm.register('full_name', {
               required: 'Ad soyad gereklidir.',
@@ -155,6 +168,8 @@ export function CoachProfilePage() {
             type="tel"
             placeholder="+90 5XX XXX XX XX"
             autoComplete="tel"
+            inputMode="tel"
+            autoCorrect="off"
             hint="İletişim ve bildirimler için"
             error={profileForm.formState.errors.phone?.message}
             {...profileForm.register('phone')}
@@ -276,6 +291,36 @@ export function CoachProfilePage() {
             Şifreyi Güncelle
           </Button>
         </form>
+      </Card>
+
+      {/* Atanmış branşlar */}
+      <Card>
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-secondary-container flex items-center justify-center shrink-0">
+            <Building2 className="w-4 h-4 text-secondary" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-display font-bold text-title-md text-on-surface">
+              Atandığın Branşlar
+            </h2>
+            <p className="text-body-sm text-on-surface/55 mt-0.5">
+              Bu branşların yoklamalarını ve paketlerini görüyor ve işaretliyorsun.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {myBranches.length === 0 ? (
+                <p className="text-body-sm text-on-surface/55 bg-surface-low rounded-md px-3 py-2 w-full">
+                  Henüz bir branşa atanmamışsın. Admin atadığında burada görünür.
+                </p>
+              ) : (
+                myBranches.map((b) => (
+                  <Badge key={b.id} variant="secondary">
+                    {b.name}
+                  </Badge>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </Card>
 
       {/* Quick info */}

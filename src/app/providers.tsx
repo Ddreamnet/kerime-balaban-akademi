@@ -10,6 +10,7 @@ import { isFullyActive, ROLE_DASHBOARD_ROUTES } from '@/types/auth.types'
 import type { UserProfile } from '@/types/auth.types'
 import { SiteSettingsProvider } from '@/hooks/useSiteSettings'
 import { registerPushForUser, registerPushListeners } from '@/lib/notifications'
+import { ErrorBoundary } from './ErrorBoundary'
 
 /**
  * On a native cold-start, the WebView always reloads `index.html` so the
@@ -76,8 +77,8 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
     // Phase 1: foreground arrival is logged; tap is routed to link_url when
     // the payload carries one. Phase 2 will open a dialog from the tap.
     registerPushListeners({
-      onForeground: (n) => {
-        console.debug('[push] foreground', n)
+      onForeground: () => {
+        // foreground push — UI handler'lar tetiklenir; gizlilik için log atmıyoruz
       },
       onTap: (data) => {
         const link = typeof data.link_url === 'string' ? data.link_url : null
@@ -146,12 +147,14 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
 
 export function Providers() {
   return (
-    <HelmetProvider>
-      <SiteSettingsProvider>
-        <AuthBootstrap>
-          <RouterProvider router={router} />
-        </AuthBootstrap>
-      </SiteSettingsProvider>
-    </HelmetProvider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <SiteSettingsProvider>
+          <AuthBootstrap>
+            <RouterProvider router={router} />
+          </AuthBootstrap>
+        </SiteSettingsProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
   )
 }

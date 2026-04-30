@@ -10,6 +10,12 @@ export interface AttendanceRecord {
   id: string
   child_id: string
   class_id: string | null
+  /**
+   * Paket sistemindeki attendance kayıtları bir lesson satırına bağlanır.
+   * Taekwondo (monthly) için NULL kalır — DB trigger billing_model'e göre
+   * BEFORE INSERT'te resolve eder ya da bırakır.
+   */
+  lesson_id: string | null
   date: string
   status: AttendanceStatus
   marked_by: string | null
@@ -28,6 +34,7 @@ function mapAttendance(row: {
   id: string
   child_id: string
   class_id: string | null
+  lesson_id?: string | null
   date: string
   status: string
   marked_by: string | null
@@ -39,6 +46,7 @@ function mapAttendance(row: {
     id: row.id,
     child_id: row.child_id,
     class_id: row.class_id,
+    lesson_id: row.lesson_id ?? null,
     date: row.date,
     status: row.status as AttendanceStatus,
     marked_by: row.marked_by,

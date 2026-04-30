@@ -14,6 +14,14 @@ export interface Child {
   full_name: string
   birthday: string | null
   class_group_id: string | null
+  /** Çocuğun branş ID'si — Faz 1+2'den itibaren NOT NULL. */
+  branch_id: string
+  /**
+   * Paket sistemi için per-student fiyat override. NULL ise
+   * branches.default_price kullanılır. Sadece branch.billing_model='package'
+   * için anlamlıdır.
+   */
+  package_price_override: number | null
   belt_level: BeltLevel | null
   avatar_url: string | null
   notes: string | null
@@ -34,6 +42,9 @@ export interface ChildInput {
   full_name: string
   birthday?: string | null
   class_group_id?: string | null
+  /** Yeni çocukta zorunlu (NOT NULL); update'te opsiyonel. */
+  branch_id?: string
+  package_price_override?: number | null
   belt_level?: BeltLevel | null
   avatar_url?: string | null
   notes?: string | null
@@ -50,6 +61,8 @@ function mapChild(row: {
   full_name: string
   birthday: string | null
   class_group_id: string | null
+  branch_id?: string | null
+  package_price_override?: number | null
   belt_level: string | null
   avatar_url: string | null
   notes: string | null
@@ -69,6 +82,8 @@ function mapChild(row: {
     full_name: row.full_name,
     birthday: row.birthday,
     class_group_id: row.class_group_id,
+    branch_id: row.branch_id ?? '',
+    package_price_override: row.package_price_override ?? null,
     belt_level: (row.belt_level as BeltLevel | null) ?? null,
     avatar_url: row.avatar_url,
     notes: row.notes,
@@ -107,6 +122,10 @@ export async function createChild(
   parentId: string,
   input: ChildInput,
 ): Promise<{ child: Child | null; error: string | null }> {
+  if (!input.branch_id) {
+    return { child: null, error: 'Branş seçimi zorunludur.' }
+  }
+
   const { data, error } = await supabase
     .from('children')
     .insert({
@@ -114,6 +133,8 @@ export async function createChild(
       full_name: input.full_name,
       birthday: input.birthday ?? null,
       class_group_id: input.class_group_id ?? null,
+      branch_id: input.branch_id,
+      package_price_override: input.package_price_override ?? null,
       belt_level: input.belt_level ?? null,
       avatar_url: input.avatar_url ?? null,
       notes: input.notes ?? null,
@@ -164,6 +185,8 @@ export async function listAllChildren(): Promise<ChildWithParent[]> {
       full_name,
       birthday,
       class_group_id,
+      branch_id,
+      package_price_override,
       belt_level,
       avatar_url,
       notes,

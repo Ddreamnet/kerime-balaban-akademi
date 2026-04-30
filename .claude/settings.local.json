@@ -57,7 +57,11 @@
       "Bash(git -C /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi show c74bb3d:supabase/)",
       "Bash(git ls-tree *)",
       "Bash(supabase --version)",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "Bash(xargs ls *)",
+      "mcp__claude_ai_Supabase__get_edge_function",
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(grep -rn 'values: \\\\\\(.*\\\\\\)?$\\\\|values: child\\\\|values: existing\\\\|values: profile\\\\|values: user' /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/src --include=\"*.tsx\")"
     ]
   }
 }

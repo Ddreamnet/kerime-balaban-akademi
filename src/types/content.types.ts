@@ -27,7 +27,14 @@ export interface Announcement {
 
 // ─── Classes ────────────────────────────────────────────────────────────────
 
-export type TrainingDay = 'pazartesi' | 'carsamba' | 'cuma'
+export type TrainingDay =
+  | 'pazartesi'
+  | 'sali'
+  | 'carsamba'
+  | 'persembe'
+  | 'cuma'
+  | 'cumartesi'
+  | 'pazar'
 
 export type BeltLevel =
   | 'beyaz'
@@ -49,6 +56,9 @@ export interface ClassGroup {
   capacity: number
   instructor: string
   is_active: boolean
+  /** Branş ID (NOT NULL after Faz 1+2). Mevcut taekwondo class'lar
+   *  M9 backfill ile bağlandı. */
+  branch_id: string
 }
 
 // ─── Products ───────────────────────────────────────────────────────────────

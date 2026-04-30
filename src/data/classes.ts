@@ -18,6 +18,7 @@ export const classGroups: ClassGroup[] = [
     capacity: 15,
     instructor: 'Kerime Balaban',
     is_active: true,
+    branch_id: '',
   },
   {
     id: 'grup-baslangic',
@@ -32,6 +33,7 @@ export const classGroups: ClassGroup[] = [
     capacity: 20,
     instructor: 'Kerime Balaban',
     is_active: true,
+    branch_id: '',
   },
   {
     id: 'grup-orta',
@@ -46,6 +48,7 @@ export const classGroups: ClassGroup[] = [
     capacity: 18,
     instructor: 'Kerime Balaban',
     is_active: true,
+    branch_id: '',
   },
   {
     id: 'grup-ileri',
@@ -60,13 +63,29 @@ export const classGroups: ClassGroup[] = [
     capacity: 15,
     instructor: 'Kerime Balaban',
     is_active: true,
+    branch_id: '',
   },
 ]
 
 export const trainingDayLabels: Record<string, string> = {
   pazartesi: 'Pazartesi',
+  sali: 'Salı',
   carsamba: 'Çarşamba',
+  persembe: 'Perşembe',
   cuma: 'Cuma',
+  cumartesi: 'Cumartesi',
+  pazar: 'Pazar',
+}
+
+/** Daha kompakt, 3 harfli kısaltmalar — toolbar/chip'lerde kullanılabilir */
+export const trainingDayShortLabels: Record<string, string> = {
+  pazartesi: 'Pzt',
+  sali: 'Sal',
+  carsamba: 'Çrş',
+  persembe: 'Prş',
+  cuma: 'Cum',
+  cumartesi: 'Cts',
+  pazar: 'Paz',
 }
 
 export const beltLevelLabels: Record<string, string> = {

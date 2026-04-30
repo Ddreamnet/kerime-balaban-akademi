@@ -29,6 +29,12 @@ import {
 } from '@/lib/performance'
 import type { Child } from '@/lib/children'
 import { setChildBillingConfig } from '@/lib/payments'
+import { getBranchById, type Branch } from '@/lib/branches'
+import {
+  listPackagesByChild,
+  abandonPackage,
+  type Package as PackageRow,
+} from '@/lib/packages'
 import { PageHeader } from '@/components/dashboard'
 import { listActiveClasses } from '@/lib/classes'
 import {
@@ -109,6 +115,9 @@ export function AdminStudentDetailPage() {
         full_name: data.full_name,
         birthday: data.birthday,
         class_group_id: data.class_group_id,
+        branch_id: (data as { branch_id?: string }).branch_id ?? '',
+        package_price_override:
+          (data as { package_price_override?: number | null }).package_price_override ?? null,
         belt_level: data.belt_level as Child['belt_level'],
         avatar_url: data.avatar_url,
         notes: data.notes,
@@ -424,6 +433,10 @@ export function AdminStudentDetailPage() {
         child={child}
         onSaved={(updated) => setChild(updated)}
       />
+
+      {/* Paketler — sadece package modeli branş için */}
+      <PackagesCard child={child} />
+
 
       {/* Performance */}
       <div className="flex flex-col gap-4">
@@ -763,4 +776,228 @@ function addOneMonth(iso: string): string {
   const lastOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
   d.setDate(Math.min(targetDay, lastOfMonth))
   return d.toISOString().slice(0, 10)
+}
+
+// ─── Paketler card ──────────────────────────────────────────────────────────
+
+const PACKAGE_STATUS_LABELS: Record<string, string> = {
+  active: 'Aktif',
+  completed: 'Tamamlandı',
+  abandoned: 'Bırakıldı',
+}
+
+function PackagesCard({ child }: { child: Child }) {
+  const [branch, setBranch] = useState<Branch | null>(null)
+  const [packages, setPackages] = useState<PackageRow[]>([])
+  const [extraCounts, setExtraCounts] = useState<Map<string, number>>(new Map())
+  const [isLoading, setIsLoading] = useState(true)
+  const [abandoningId, setAbandoningId] = useState<string | null>(null)
+
+  const reload = async () => {
+    setIsLoading(true)
+    const [b, pkgs] = await Promise.all([
+      getBranchById(child.branch_id),
+      listPackagesByChild(child.id),
+    ])
+    setBranch(b)
+    setPackages(pkgs)
+    if (pkgs.length > 0) {
+      const { data: extras } = await supabase
+        .from('lessons')
+        .select('package_id')
+        .in('package_id', pkgs.map((p) => p.id))
+        .eq('is_extra', true)
+      const map = new Map<string, number>()
+      for (const row of (extras ?? []) as { package_id: string }[]) {
+        map.set(row.package_id, (map.get(row.package_id) ?? 0) + 1)
+      }
+      setExtraCounts(map)
+    }
+    setIsLoading(false)
+  }
+
+  const handleAbandon = async (packageId: string) => {
+    if (
+      !confirm(
+        'Bu paketi "bırakıldı" olarak işaretlemek istediğinden emin misin?\n' +
+          'Kalan dersler ve telafi hakkı yanar; iade verilmez. Veliye otomatik bildirim gitmez (manuel iletişim gerekir).',
+      )
+    )
+      return
+    setAbandoningId(packageId)
+    const { error } = await abandonPackage(packageId)
+    setAbandoningId(null)
+    if (error) {
+      alert(`Başarısız: ${error}`)
+      return
+    }
+    await reload()
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setIsLoading(true)
+      const [b, pkgs] = await Promise.all([
+        getBranchById(child.branch_id),
+        listPackagesByChild(child.id),
+      ])
+      if (cancelled) return
+      setBranch(b)
+      setPackages(pkgs)
+
+      // Extra count'ları paketlere göre topla
+      if (pkgs.length > 0) {
+        const { data: extras } = await supabase
+          .from('lessons')
+          .select('package_id')
+          .in('package_id', pkgs.map((p) => p.id))
+          .eq('is_extra', true)
+        if (cancelled) return
+        const map = new Map<string, number>()
+        for (const row of (extras ?? []) as { package_id: string }[]) {
+          map.set(row.package_id, (map.get(row.package_id) ?? 0) + 1)
+        }
+        setExtraCounts(map)
+      }
+      setIsLoading(false)
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [child.id, child.branch_id])
+
+  if (isLoading) return null
+  if (branch?.billing_model !== 'package') return null
+
+  const active = packages.find((p) => p.status === 'active')
+  const past = packages.filter((p) => p.status !== 'active')
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-label-sm text-on-surface/40 uppercase tracking-widest">
+          Paketler — {branch.name}
+        </p>
+        <Badge variant="secondary">{packages.length} paket geçmiş</Badge>
+      </div>
+
+      {!active && packages.length === 0 && (
+        <p className="text-body-sm text-on-surface/55 bg-surface-low rounded-md px-3 py-3 text-center">
+          Henüz paket başlatılmamış. Koç ilk yoklamayı işaretleyince otomatik
+          oluşturulur (implicit consent).
+        </p>
+      )}
+
+      {active && (
+        <div className="bg-primary/5 border border-primary/15 rounded-lg p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <strong className="font-display text-title-md text-primary">
+                Paket #{active.package_number}
+              </strong>
+              <Badge variant="success">Aktif</Badge>
+            </div>
+            <div className="text-body-sm text-on-surface/60">
+              {active.start_date && `Başlangıç: ${formatDateLong(active.start_date)}`}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-body-sm">
+              <span className="font-semibold text-on-surface">
+                {active.used_slots} / {active.total_slots} ders
+              </span>
+              <span className="text-on-surface/60">
+                {active.total_slots - active.used_slots} kaldı
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-surface-low overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${(active.used_slots / active.total_slots) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-body-sm">
+            <div>
+              <span className="text-on-surface/55">Telafi:</span>{' '}
+              <strong className="text-on-surface">
+                {active.telafi_granted ? 'Aktif (1 hak)' : 'Kullanılmadı'}
+              </strong>
+            </div>
+            <div>
+              <span className="text-on-surface/55">Yedek ders:</span>{' '}
+              <strong className="text-on-surface">
+                {extraCounts.get(active.id) ?? 0}
+              </strong>
+            </div>
+            <div>
+              <span className="text-on-surface/55">Planlanan bitiş:</span>{' '}
+              <strong className="text-on-surface">
+                {active.planned_end_date ? formatDateLong(active.planned_end_date) : '—'}
+              </strong>
+            </div>
+            <div>
+              <span className="text-on-surface/55">Fiyat:</span>{' '}
+              <strong className="text-on-surface">
+                {active.price !== null ? `${active.price} ₺` : '—'}
+              </strong>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleAbandon(active.id)}
+              loading={abandoningId === active.id}
+              className="text-wine hover:bg-wine/5"
+            >
+              Paketi sonlandır (bırakıldı)
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-label-sm text-on-surface/45 uppercase tracking-widest">
+            Geçmiş Paketler
+          </p>
+          {past.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center justify-between gap-3 bg-surface-low rounded-lg p-3"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-display font-semibold text-body-md text-on-surface">
+                  Paket #{p.package_number}
+                </span>
+                <Badge
+                  variant={p.status === 'completed' ? 'success' : 'warning'}
+                >
+                  {PACKAGE_STATUS_LABELS[p.status] ?? p.status}
+                </Badge>
+              </div>
+              <div className="text-body-sm text-on-surface/60 text-right">
+                <div>
+                  {p.used_slots}/{p.total_slots}
+                  {(extraCounts.get(p.id) ?? 0) > 0 && ` · +${extraCounts.get(p.id)}`}
+                </div>
+                {p.actual_end_date && (
+                  <div className="text-label-sm text-on-surface/45">
+                    {formatDateLong(p.actual_end_date)}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
 }
