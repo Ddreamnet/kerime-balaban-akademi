@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Splash arka planı + ortalanmış logo. @color/splashBg day-night uyumlu
+  (values/colors.xml: white, values-night/colors.xml: black). Bitmap
+  android:gravity="center" sayesinde native boyutunda kalır, ImageView
+  scale-type'ı ne olursa olsun deformasyon olmaz.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splashBg"/>
+    <item>
+        <bitmap
+            android:src="@drawable/splash_logo"
+            android:gravity="center"/>
+    </item>
+</layer-list>

@@ -17,8 +17,13 @@ const config: CapacitorConfig = {
     },
     SplashScreen: {
       launchAutoHide: true,
-      launchShowDuration: 2000,
-      backgroundColor: '#b7131a',
+      // Short fallback — JS calls SplashScreen.hide() in initCapacitor as
+      // soon as the WebView is ready. This duration only kicks in if JS hangs.
+      launchShowDuration: 200,
+      // No androidScaleType — Android uses a layer-list drawable
+      // (drawable/splash.xml) with @color bg + center-gravity bitmap, so
+      // the default FIT_XY only stretches the solid bg color and leaves the
+      // logo at native size.
       showSpinner: false,
     },
     Keyboard: {

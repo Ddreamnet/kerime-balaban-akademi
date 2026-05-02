@@ -61,7 +61,16 @@
       "Bash(xargs ls *)",
       "mcp__claude_ai_Supabase__get_edge_function",
       "Bash(grep -E \"\\\\.tsx$\")",
-      "Bash(grep -rn 'values: \\\\\\(.*\\\\\\)?$\\\\|values: child\\\\|values: existing\\\\|values: profile\\\\|values: user' /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/src --include=\"*.tsx\")"
+      "Bash(grep -rn 'values: \\\\\\(.*\\\\\\)?$\\\\|values: child\\\\|values: existing\\\\|values: profile\\\\|values: user' /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/src --include=\"*.tsx\")",
+      "Bash(file /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/design/*.png)",
+      "Bash(file /mnt/c/Users/Fatih/Desktop/Work/kerime-balaban-akademi/ios/App/App/Assets.xcassets/Splash.imageset/*.png)",
+      "Bash(magick -version)",
+      "Bash(convert -version)",
+      "Bash(command -v ffmpeg python3)",
+      "Bash(python3 *)",
+      "Bash(pip install *)",
+      "Bash(apt-get install *)",
+      "Bash(sudo apt-get *)"
     ]
   }
 }

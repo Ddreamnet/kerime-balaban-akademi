@@ -104,7 +104,9 @@
       />
     </noscript>
     <style>
-      /* Initial loading splash — shown before JS parses; hidden from main.tsx after React mounts. */
+      /* Initial loading splash — shown before JS parses; hidden from main.tsx after React mounts.
+         Bg matches the splash video's own background color so the video frames blend seamlessly
+         with the surrounding splash, regardless of system light/dark theme. */
       #app-splash {
         position: fixed;
         inset: 0;

@@ -3,4 +3,6 @@
     <color name="colorPrimary">#b7131a</color>
     <color name="colorPrimaryDark">#7a0c10</color>
     <color name="colorAccent">#db322f</color>
+    <!-- Splash background — light theme. values-night/colors.xml overrides for dark. -->
+    <color name="splashBg">#FFFFFF</color>
 </resources>

@@ -50,12 +50,15 @@ export async function initCapacitor(): Promise<void> {
   await SplashScreen.hide()
 
   // Status bar style.
-  // Default to "Dark" (dark icons on light backgrounds) — most pages have a
-  // light surface. Pages with a dark hero call `setNativeStatusBarLight(true)`
-  // on mount to flip to white icons.
+  // Capacitor's enum is named after the *background*, not the text:
+  //   Style.Light → DARK text/icons (for light backgrounds)
+  //   Style.Dark  → LIGHT text/icons (for dark backgrounds)
+  // Most pages have a light surface, so default to dark icons. Pages with a
+  // dark hero call `setNativeStatusBarLight(true)` on mount to flip to white.
   if (getPlatform() === 'ios') {
-    await StatusBar.setStyle({ style: Style.Dark })
+    await StatusBar.setStyle({ style: Style.Light })
   } else {
+    // Android status bar is the burgundy header area, so use light icons.
     await StatusBar.setStyle({ style: Style.Dark })
     await StatusBar.setBackgroundColor({ color: '#b7131a' })
     // Keep the WebView sitting BELOW the status bar on Android so
@@ -107,6 +110,29 @@ export async function initCapacitor(): Promise<void> {
       document.body.classList.remove('keyboard-open')
     })
   }
+
+  // Clear app icon badge + delivered notifications on cold start and every
+  // time the app comes to foreground. iOS doesn't fire an event when the
+  // user swipes a notification from notification center, so the next-best
+  // UX is "you opened the app, you've seen it" — matches Mail/Slack/etc.
+  // On iOS, removeAllDeliveredNotifications also resets the icon badge to 0.
+  void clearNotificationsAndBadge()
+  App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive) void clearNotificationsAndBadge()
+  })
+}
+
+async function clearNotificationsAndBadge(): Promise<void> {
+  if (!isNativePlatform()) return
+  try {
+    await CapPush.removeAllDeliveredNotifications()
+  } catch (err) {
+    // Throws on iOS if the app hasn't registered for remote notifications
+    // yet (first launch, before permission grant) — safe to ignore.
+    if (import.meta.env.DEV) {
+      console.warn('[capacitor] clearNotificationsAndBadge skipped', err)
+    }
+  }
 }
 
 /**
@@ -114,12 +140,15 @@ export async function initCapacitor(): Promise<void> {
  *   • `true`  → light icons (white) — for pages with dark hero backgrounds
  *   • `false` → dark icons — for pages with light surface
  *
+ * NB: Capacitor's Style enum is counter-intuitive — `Style.Dark` means
+ * "for dark backgrounds" i.e. white icons; `Style.Light` means dark icons.
+ *
  * Safe to call on web — it's a no-op there.
  */
 export async function setNativeStatusBarLight(light: boolean): Promise<void> {
   if (!isNativePlatform()) return
   try {
-    await StatusBar.setStyle({ style: light ? Style.Light : Style.Dark })
+    await StatusBar.setStyle({ style: light ? Style.Dark : Style.Light })
   } catch (err) {
     console.warn('[capacitor] setNativeStatusBarLight failed', err)
   }
@@ -255,14 +284,23 @@ export const LocalNotifications = {
 export type PickSource = 'camera' | 'gallery' | 'prompt'
 
 export interface PickedImage {
-  /** data URL (data:image/jpeg;base64,...) — ready for <img src> and upload */
+  /** data URL (data:image/webp;base64,... or data:image/jpeg;base64,...) — ready for <img src> and upload */
   dataUrl: string
-  /** File extension without dot, e.g. "jpeg" | "png" */
+  /** File extension without dot, e.g. "webp" | "jpeg" | "png" */
   format: string
 }
 
 /** Avatars render at 32–160px; 512 is comfortably above the largest retina target. */
 const AVATAR_MAX_DIMENSION = 512
+
+/**
+ * Encoding quality. WebP at 0.82 produces a similar visual to JPEG 0.78 but
+ * ~30% smaller. Both well within the "no perceptual loss for an avatar"
+ * range. Bumped slightly above the old JPEG 0.75 because WebP handles
+ * gradients better and we wanted a touch more headroom for skin tones.
+ */
+const WEBP_QUALITY = 0.82
+const JPEG_QUALITY = 0.78
 
 export const Camera = {
   /**
@@ -319,7 +357,10 @@ export const Camera = {
       })
 
       if (!photo.dataUrl) return null
-      return { dataUrl: photo.dataUrl, format: photo.format ?? 'jpeg' }
+      // Capacitor Camera plugin returns JPEG. Re-encode to WebP for ~30%
+      // smaller storage/transfer; falls back to the original JPEG on any
+      // engine that can't encode WebP via canvas.
+      return await recodeAsWebP(photo.dataUrl, photo.format ?? 'jpeg')
     } catch (err) {
       // User cancelled or denied permission — treat as no selection.
       const message = err instanceof Error ? err.message : String(err)
@@ -349,7 +390,7 @@ function pickImageViaInput(source: PickSource): Promise<PickedImage | null> {
       const file = input.files?.[0]
       if (!file) return finish(null)
 
-      resizeImageFile(file, AVATAR_MAX_DIMENSION, 0.75)
+      resizeImageFile(file, AVATAR_MAX_DIMENSION)
         .then((picked) => finish(picked))
         .catch((err) => reject(err))
     }
@@ -373,13 +414,13 @@ function pickImageViaInput(source: PickSource): Promise<PickedImage | null> {
 
 /**
  * Decode a picked image file, scale it so the longest side is at most
- * `maxDim` px (preserving aspect ratio), and re-encode as JPEG.
- * Mirrors the native Capacitor Camera resize so web uploads aren't multi-MB.
+ * `maxDim` px (preserving aspect ratio), and encode as WebP (or JPEG on
+ * engines that can't produce WebP via canvas). Mirrors the native Capacitor
+ * Camera resize so web uploads aren't multi-MB.
  */
 async function resizeImageFile(
   file: File,
   maxDim: number,
-  quality: number,
 ): Promise<PickedImage> {
   const bitmap =
     typeof createImageBitmap === 'function'
@@ -400,8 +441,58 @@ async function resizeImageFile(
 
   if ('close' in bitmap && typeof bitmap.close === 'function') bitmap.close()
 
-  const dataUrl = canvas.toDataURL('image/jpeg', quality)
-  return { dataUrl, format: 'jpeg' }
+  return encodeCanvas(canvas)
+}
+
+/**
+ * Encode a canvas as WebP if the browser/WebView supports it, falling back
+ * to JPEG. WebP is ~30% smaller for equivalent visual quality. On iOS 14+
+ * (Safari/WKWebView) and Chromium-based Android WebView, encoding works.
+ */
+function encodeCanvas(canvas: HTMLCanvasElement): PickedImage {
+  const webp = canvas.toDataURL('image/webp', WEBP_QUALITY)
+  if (webp.startsWith('data:image/webp')) {
+    return { dataUrl: webp, format: 'webp' }
+  }
+  return {
+    dataUrl: canvas.toDataURL('image/jpeg', JPEG_QUALITY),
+    format: 'jpeg',
+  }
+}
+
+/**
+ * Re-encode an existing dataUrl (e.g. a JPEG returned by the native Camera
+ * plugin) as WebP via canvas. Falls back to the original dataUrl/format
+ * if anything goes wrong — never blocks the upload.
+ */
+async function recodeAsWebP(
+  dataUrl: string,
+  fallbackFormat: string,
+): Promise<PickedImage> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image()
+      i.onload = () => resolve(i)
+      i.onerror = () => reject(new Error('image decode failed'))
+      i.src = dataUrl
+    })
+
+    const canvas = document.createElement('canvas')
+    canvas.width = img.naturalWidth
+    canvas.height = img.naturalHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D context oluşturulamadı.')
+    ctx.drawImage(img, 0, 0)
+
+    const webp = canvas.toDataURL('image/webp', WEBP_QUALITY)
+    if (webp.startsWith('data:image/webp')) {
+      return { dataUrl: webp, format: 'webp' }
+    }
+  } catch {
+    // Fall through to original — better to ship a slightly larger JPEG
+    // than to fail the avatar update.
+  }
+  return { dataUrl, format: fallbackFormat }
 }
 
 function loadImageElement(file: File): Promise<HTMLImageElement> {
